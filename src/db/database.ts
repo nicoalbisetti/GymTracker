@@ -1,44 +1,21 @@
-import * as SQLite from 'expo-sqlite';
+import Dexie, { type Table } from 'dexie';
+import type { Exercise, Workout, WorkoutExercise, WorkoutSet } from '@/types';
 
-const db = SQLite.openDatabaseSync('gymtracker.db');
+class GymTrackerDB extends Dexie {
+  exercises!: Table<Exercise>;
+  workouts!: Table<Workout>;
+  workoutExercises!: Table<WorkoutExercise>;
+  workoutSets!: Table<WorkoutSet>;
 
-export function initDatabase(): void {
-  db.execSync(`
-    PRAGMA journal_mode = WAL;
-
-    CREATE TABLE IF NOT EXISTS exercises (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      category TEXT NOT NULL DEFAULT 'Strength',
-      muscle_group TEXT NOT NULL DEFAULT 'Other',
-      notes TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS workouts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      date TEXT NOT NULL,
-      duration_minutes INTEGER,
-      notes TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS workout_exercises (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      workout_id INTEGER NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
-      exercise_id INTEGER NOT NULL REFERENCES exercises(id),
-      order_index INTEGER NOT NULL DEFAULT 0
-    );
-
-    CREATE TABLE IF NOT EXISTS workout_sets (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      workout_exercise_id INTEGER NOT NULL REFERENCES workout_exercises(id) ON DELETE CASCADE,
-      set_number INTEGER NOT NULL,
-      reps INTEGER,
-      weight REAL,
-      duration INTEGER,
-      completed INTEGER NOT NULL DEFAULT 0
-    );
-  `);
+  constructor() {
+    super('GymTrackerDB');
+    this.version(1).stores({
+      exercises: '++id, name, category, muscleGroup',
+      workouts: '++id, date',
+      workoutExercises: '++id, workoutId, exerciseId',
+      workoutSets: '++id, workoutExerciseId',
+    });
+  }
 }
 
-export default db;
+export const db = new GymTrackerDB();
