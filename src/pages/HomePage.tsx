@@ -10,6 +10,15 @@ const CopyIcon = () => (
   </svg>
 );
 
+const TrashIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+    <path d="M10 11v6M14 11v6"/>
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  </svg>
+);
+
 export default function HomePage() {
   const navigate = useNavigate();
   const routines = useLiveQuery(() => db.routines.orderBy('createdAt').reverse().toArray());
@@ -20,6 +29,17 @@ export default function HomePage() {
       createdAt: new Date().toISOString(),
     });
     navigate(`/routine/${id}`);
+  }
+
+  async function deleteRoutine(routine: Routine, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!confirm(`¿Eliminar "${routine.name}"?`)) return;
+    const routineExercises = await db.routineExercises.where('routineId').equals(routine.id!).toArray();
+    for (const re of routineExercises) {
+      await db.sets.where('routineExerciseId').equals(re.id!).delete();
+    }
+    await db.routineExercises.where('routineId').equals(routine.id!).delete();
+    await db.routines.delete(routine.id!);
   }
 
   async function duplicateRoutine(routine: Routine, e: React.MouseEvent) {
@@ -96,6 +116,13 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => deleteRoutine(routine, e)}
+                  className="text-gray-400 active:text-red-500 p-1"
+                  title="Eliminar rutina"
+                >
+                  <TrashIcon />
+                </button>
                 <button
                   onClick={(e) => duplicateRoutine(routine, e)}
                   className="text-gray-400 active:text-primary-500 p-1"
