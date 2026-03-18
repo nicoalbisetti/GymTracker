@@ -1,0 +1,296 @@
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import {
+  DndContext, closestCenter, PointerSensor, TouchSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, verticalListSortingStrategy,
+  useSortable, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { db } from '@/db/database';
+import type { Exercise, ExerciseSet, RoutineExercise } from '@/types';
+import ExercisePicker from '@/components/ExercisePicker';
+
+// ─── Sortable exercise card ───────────────────────────────────────────────────
+
+interface CardProps {
+  re: RoutineExercise;
+  exercise: Exercise | undefined;
+  sets: ExerciseSet[];
+  onAddSet: (reId: number) => void;
+  onUpdateSet: (set: ExerciseSet, field: 'reps' | 'weight', value: string) => void;
+  onDeleteSet: (setId: number, reId: number) => void;
+  onRemove: (reId: number) => void;
+  onUpdateRest: (reId: number, seconds: number) => void;
+}
+
+function SortableExerciseCard({ re, exercise, sets, onAddSet, onUpdateSet, onDeleteSet, onRemove, onUpdateRest }: CardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: re.id! });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-3 bg-gray-50">
+        {/* Drag handle */}
+        <button
+          className="touch-none cursor-grab text-gray-300 text-xl px-1 select-none"
+          {...attributes}
+          {...listeners}
+        >
+          ⠿
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-gray-900 truncate">{exercise?.name}</p>
+          <p className="text-xs text-gray-400">{exercise?.muscleGroup}</p>
+        </div>
+        <button onClick={() => onRemove(re.id!)} className="text-gray-300 active:text-red-400 text-xl leading-none px-1">×</button>
+      </div>
+
+      {/* Rest time */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-50">
+        <span className="text-sm text-gray-400">⏱ Descanso</span>
+        <div className="ml-auto flex items-center gap-1.5">
+          <input
+            type="number"
+            inputMode="numeric"
+            defaultValue={re.restSeconds ?? 60}
+            onBlur={(e) => onUpdateRest(re.id!, Math.max(0, parseInt(e.target.value) || 0))}
+            className="w-16 bg-gray-100 rounded-lg px-2 py-1.5 text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <span className="text-sm text-gray-400">seg</span>
+        </div>
+      </div>
+
+      {/* Sets */}
+      <div className="px-4 pt-2 pb-3 flex flex-col gap-2">
+        {sets.length > 0 && (
+          <div className="flex items-center gap-2 px-1">
+            <span className="w-8 text-xs text-gray-400 text-center">Serie</span>
+            <span className="flex-1 text-xs text-gray-400 text-center">Kg</span>
+            <span className="flex-1 text-xs text-gray-400 text-center">Reps</span>
+            <span className="w-8" />
+          </div>
+        )}
+        {sets.map((set) => (
+          <div key={set.id} className="flex items-center gap-2">
+            <span className="w-8 text-sm text-gray-400 text-center">{set.setNumber}</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              defaultValue={set.weight || ''}
+              placeholder="0"
+              onBlur={(e) => onUpdateSet(set, 'weight', e.target.value)}
+              className="flex-1 bg-gray-100 rounded-xl px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <input
+              type="number"
+              inputMode="numeric"
+              defaultValue={set.reps || ''}
+              placeholder="0"
+              onBlur={(e) => onUpdateSet(set, 'reps', e.target.value)}
+              className="flex-1 bg-gray-100 rounded-xl px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <button
+              onClick={() => onDeleteSet(set.id!, re.id!)}
+              className="w-8 text-gray-300 active:text-red-400 text-xl text-center leading-none"
+            >×</button>
+          </div>
+        ))}
+        <button
+          onClick={() => onAddSet(re.id!)}
+          className="mt-1 w-full text-sm text-primary-500 py-1.5 rounded-xl border border-dashed border-primary-300"
+        >
+          + Agregar serie
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+
+export default function RoutineDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const routineId = Number(id);
+  const navigate = useNavigate();
+  const [showPicker, setShowPicker] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+  );
+
+  const routine = useLiveQuery(() => db.routines.get(routineId), [routineId]);
+
+  const routineExercises = useLiveQuery(
+    () => db.routineExercises.where('routineId').equals(routineId).sortBy('orderIndex'),
+    [routineId]
+  );
+
+  const allSets = useLiveQuery(
+    async () => {
+      if (!routineExercises?.length) return [];
+      return db.sets.where('routineExerciseId').anyOf(routineExercises.map(re => re.id!)).toArray();
+    },
+    [routineExercises]
+  );
+
+  const exercises = useLiveQuery(
+    async () => {
+      if (!routineExercises?.length) return {} as Record<number, Exercise>;
+      const exs = await db.exercises.where('id').anyOf(routineExercises.map(re => re.exerciseId)).toArray();
+      return Object.fromEntries(exs.map(e => [e.id!, e])) as Record<number, Exercise>;
+    },
+    [routineExercises]
+  );
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !routineExercises) return;
+    const oldIndex = routineExercises.findIndex(re => re.id === active.id);
+    const newIndex = routineExercises.findIndex(re => re.id === over.id);
+    const reordered = arrayMove(routineExercises, oldIndex, newIndex);
+    await Promise.all(reordered.map((re, i) => db.routineExercises.update(re.id!, { orderIndex: i })));
+  }
+
+  async function handleAddExercises(exercises: Exercise[]) {
+    const baseOrder = routineExercises?.length ?? 0;
+    for (let i = 0; i < exercises.length; i++) {
+      const routineExerciseId = await db.routineExercises.add({
+        routineId, exerciseId: exercises[i].id!, orderIndex: baseOrder + i, restSeconds: 60,
+      });
+      await db.sets.add({ routineExerciseId: routineExerciseId as number, setNumber: 1, reps: 10, weight: 0 });
+    }
+    setShowPicker(false);
+  }
+
+  async function handleAddSet(routineExerciseId: number) {
+    const existing = (allSets ?? [])
+      .filter(s => s.routineExerciseId === routineExerciseId)
+      .sort((a, b) => a.setNumber - b.setNumber);
+    const last = existing[existing.length - 1];
+    await db.sets.add({
+      routineExerciseId,
+      setNumber: existing.length + 1,
+      reps: last?.reps ?? 10,
+      weight: last?.weight ?? 0,
+    });
+  }
+
+  async function handleUpdateSet(set: ExerciseSet, field: 'reps' | 'weight', value: string) {
+    await db.sets.update(set.id!, { [field]: parseFloat(value) || 0 });
+  }
+
+  async function handleDeleteSet(setId: number, routineExerciseId: number) {
+    await db.sets.delete(setId);
+    const remaining = (allSets ?? [])
+      .filter(s => s.routineExerciseId === routineExerciseId && s.id !== setId)
+      .sort((a, b) => a.setNumber - b.setNumber);
+    for (let i = 0; i < remaining.length; i++) {
+      await db.sets.update(remaining[i].id!, { setNumber: i + 1 });
+    }
+  }
+
+  async function handleRemoveExercise(routineExerciseId: number) {
+    await db.sets.where('routineExerciseId').equals(routineExerciseId).delete();
+    await db.routineExercises.delete(routineExerciseId);
+  }
+
+  async function handleUpdateRest(routineExerciseId: number, restSeconds: number) {
+    await db.routineExercises.update(routineExerciseId, { restSeconds });
+  }
+
+  async function handleRenameRoutine(newName: string) {
+    if (newName.trim()) await db.routines.update(routineId, { name: newName.trim() });
+    setEditingName(false);
+  }
+
+  if (!routine) return null;
+
+  const excludedIds = routineExercises?.map(re => re.exerciseId) ?? [];
+
+  return (
+    <div className="flex flex-col min-h-full">
+      <div className="flex items-center gap-3 px-4 py-4 bg-white border-b border-gray-100">
+        <button onClick={() => navigate('/')} className="text-gray-400 text-2xl p-1">←</button>
+        {editingName ? (
+          <input
+            autoFocus
+            defaultValue={routine.name}
+            onBlur={(e) => handleRenameRoutine(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleRenameRoutine((e.target as HTMLInputElement).value)}
+            className="flex-1 text-lg font-semibold text-gray-900 focus:outline-none border-b-2 border-primary-500 pb-0.5"
+          />
+        ) : (
+          <h1 className="flex-1 text-lg font-semibold text-gray-900 cursor-pointer" onClick={() => setEditingName(true)}>
+            {routine.name}
+          </h1>
+        )}
+        {!editingName && (
+          <button onClick={() => setEditingName(true)} className="text-gray-400 text-sm px-2">✎</button>
+        )}
+      </div>
+
+      <div className="flex-1 px-4 py-4 flex flex-col gap-4">
+        {(!routineExercises || routineExercises.length === 0) && (
+          <div className="text-center py-12 text-gray-400">
+            <p className="text-4xl mb-3">🏋️</p>
+            <p className="font-medium">Sin ejercicios todavía</p>
+            <p className="text-sm">Tocá el botón para agregar</p>
+          </div>
+        )}
+
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={(routineExercises ?? []).map(re => re.id!)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="flex flex-col gap-4">
+              {(routineExercises ?? []).map(re => {
+                const sets = (allSets ?? [])
+                  .filter(s => s.routineExerciseId === re.id)
+                  .sort((a, b) => a.setNumber - b.setNumber);
+                return (
+                  <SortableExerciseCard
+                    key={re.id}
+                    re={re}
+                    exercise={exercises?.[re.exerciseId]}
+                    sets={sets}
+                    onAddSet={handleAddSet}
+                    onUpdateSet={handleUpdateSet}
+                    onDeleteSet={handleDeleteSet}
+                    onRemove={handleRemoveExercise}
+                    onUpdateRest={handleUpdateRest}
+                  />
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
+
+        <button
+          onClick={() => setShowPicker(true)}
+          className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 active:border-primary-300 active:text-primary-500 flex items-center justify-center gap-2"
+        >
+          <span className="text-xl">+</span>
+          <span className="font-medium">Agregar ejercicio</span>
+        </button>
+      </div>
+
+      {showPicker && (
+        <ExercisePicker excludeIds={excludedIds} onConfirm={handleAddExercises} onClose={() => setShowPicker(false)} />
+      )}
+    </div>
+  );
+}

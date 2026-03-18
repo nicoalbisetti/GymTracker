@@ -1,16 +1,17 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 const tabs = [
-  { to: '/',          label: 'Inicio',    icon: '🏠' },
-  { to: '/workouts',  label: 'Entrenos',  icon: '💪' },
-  { to: '/exercises', label: 'Ejercicios',icon: '📋' },
-  { to: '/history',   label: 'Historial', icon: '📅' },
-  { to: '/profile',   label: 'Perfil',    icon: '👤' },
+  { to: '/',          label: 'Rutinas',    icon: '💪' },
+  { to: '/exercises', label: 'Ejercicios', icon: '📋' },
+  { to: '/history',   label: 'Historial',  icon: '📅' },
 ];
 
 export default function BottomNav() {
+  const location = useLocation();
+  if (location.pathname.startsWith('/routine/') || location.pathname.startsWith('/workout/')) return null;
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 z-50 safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 z-40 max-w-lg mx-auto">
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}
