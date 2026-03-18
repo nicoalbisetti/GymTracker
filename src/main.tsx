@@ -5,7 +5,7 @@ import { seedExercises } from '@/db/seed';
 import './index.css';
 import App from './App';
 
-seedExercises();
+seedExercises().catch(console.error);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
