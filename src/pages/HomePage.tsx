@@ -3,6 +3,13 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/db/database';
 import type { Routine } from '@/types';
 
+const CopyIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+  </svg>
+);
+
 export default function HomePage() {
   const navigate = useNavigate();
   const routines = useLiveQuery(() => db.routines.orderBy('createdAt').reverse().toArray());
@@ -13,6 +20,32 @@ export default function HomePage() {
       createdAt: new Date().toISOString(),
     });
     navigate(`/routine/${id}`);
+  }
+
+  async function duplicateRoutine(routine: Routine, e: React.MouseEvent) {
+    e.stopPropagation();
+    const newRoutineId = await db.routines.add({
+      name: `Copia de ${routine.name}`,
+      createdAt: new Date().toISOString(),
+    });
+    const routineExercises = await db.routineExercises.where('routineId').equals(routine.id!).toArray();
+    for (const re of routineExercises) {
+      const newReId = await db.routineExercises.add({
+        routineId: newRoutineId as number,
+        exerciseId: re.exerciseId,
+        orderIndex: re.orderIndex,
+        restSeconds: re.restSeconds,
+      });
+      const sets = await db.sets.where('routineExerciseId').equals(re.id!).toArray();
+      for (const set of sets) {
+        await db.sets.add({
+          routineExerciseId: newReId as number,
+          setNumber: set.setNumber,
+          reps: set.reps,
+          weight: set.weight,
+        });
+      }
+    }
   }
 
   async function startWorkout(routine: Routine) {
@@ -62,7 +95,16 @@ export default function HomePage() {
                   })}
                 </p>
               </div>
-              <span className="text-gray-300 text-xl">›</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => duplicateRoutine(routine, e)}
+                  className="text-gray-400 active:text-primary-500 p-1"
+                  title="Copiar rutina"
+                >
+                  <CopyIcon />
+                </button>
+                <span className="text-gray-300 text-xl">›</span>
+              </div>
             </button>
             <div className="border-t border-gray-50 px-4 py-2">
               <button

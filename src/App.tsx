@@ -6,6 +6,7 @@ import RoutineDetailPage from '@/pages/RoutineDetailPage';
 import ActiveWorkoutPage from '@/pages/ActiveWorkoutPage';
 import HistoryPage from '@/pages/HistoryPage';
 import SessionDetailPage from '@/pages/SessionDetailPage';
+import ProgressPage from '@/pages/ProgressPage';
 
 export default function App() {
   const location = useLocation();
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/workout/:sessionId"   element={<ActiveWorkoutPage />} />
           <Route path="/history"              element={<HistoryPage />} />
           <Route path="/history/:sessionId"   element={<SessionDetailPage />} />
+          <Route path="/progress"             element={<ProgressPage />} />
         </Routes>
       </main>
       <BottomNav />
