@@ -13,6 +13,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { db } from '@/db/database';
 import type { Exercise, ExerciseSet, RoutineExercise } from '@/types';
 import ExercisePicker from '@/components/ExercisePicker';
+import { ArrowLeft, GripVertical, X, Trash2, Plus, Timer, Pencil, Dumbbell } from 'lucide-react';
 
 // ─── Sortable exercise card ───────────────────────────────────────────────────
 
@@ -38,59 +39,64 @@ function SortableExerciseCard({ re, exercise, sets, onAddSet, onUpdateSet, onDel
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div ref={setNodeRef} style={style} className="bg-slate-800 rounded-2xl border border-slate-700/50 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-3 bg-gray-50">
-        {/* Drag handle */}
+      <div className="flex items-center gap-2 px-3 py-3 bg-slate-700/40">
         <button
-          className="touch-none cursor-grab text-gray-300 text-xl px-1 select-none"
+          className="touch-none cursor-grab text-slate-600 p-1 select-none active:text-slate-400"
           {...attributes}
           {...listeners}
         >
-          ⠿
+          <GripVertical size={18} />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 truncate">{exercise?.name}</p>
-          <p className="text-xs text-gray-400">{exercise?.muscleGroup}</p>
+          <p className="font-semibold text-white truncate">{exercise?.name}</p>
+          <p className="text-xs text-slate-500">{exercise?.muscleGroup}</p>
         </div>
-        <button onClick={() => onRemove(re.id!)} className="text-gray-300 active:text-red-400 text-xl leading-none px-1">×</button>
+        <button
+          onClick={() => onRemove(re.id!)}
+          className="text-slate-600 active:text-red-400 p-1.5 rounded-lg"
+        >
+          <Trash2 size={16} />
+        </button>
       </div>
 
       {/* Rest time */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-50">
-        <span className="text-sm text-gray-400">⏱ Descanso</span>
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-700/40">
+        <Timer size={14} className="text-slate-500" />
+        <span className="text-sm text-slate-400">Descanso</span>
         <div className="ml-auto flex items-center gap-1.5">
           <input
             type="number"
             inputMode="numeric"
             defaultValue={re.restSeconds ?? 60}
             onBlur={(e) => onUpdateRest(re.id!, Math.max(0, parseInt(e.target.value) || 0))}
-            className="w-16 bg-gray-100 rounded-lg px-2 py-1.5 text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-16 bg-slate-700/60 border border-slate-600/50 rounded-lg px-2 py-1.5 text-sm text-center text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <span className="text-sm text-gray-400">seg</span>
+          <span className="text-sm text-slate-500">seg</span>
         </div>
       </div>
 
       {/* Sets */}
-      <div className="px-4 pt-2 pb-3 flex flex-col gap-2">
+      <div className="px-4 pt-2.5 pb-3 flex flex-col gap-2">
         {sets.length > 0 && (
           <div className="flex items-center gap-2 px-1">
-            <span className="w-8 text-xs text-gray-400 text-center">Serie</span>
-            <span className="flex-1 text-xs text-gray-400 text-center">Kg</span>
-            <span className="flex-1 text-xs text-gray-400 text-center">Reps</span>
+            <span className="w-8 text-xs text-slate-500 text-center">Serie</span>
+            <span className="flex-1 text-xs text-slate-500 text-center">Kg</span>
+            <span className="flex-1 text-xs text-slate-500 text-center">Reps</span>
             <span className="w-8" />
           </div>
         )}
         {sets.map((set) => (
           <div key={set.id} className="flex items-center gap-2">
-            <span className="w-8 text-sm text-gray-400 text-center">{set.setNumber}</span>
+            <span className="w-8 text-sm text-slate-500 text-center font-medium">{set.setNumber}</span>
             <input
               type="number"
               inputMode="decimal"
               defaultValue={set.weight || ''}
               placeholder="0"
               onBlur={(e) => onUpdateSet(set, 'weight', e.target.value)}
-              className="flex-1 bg-gray-100 rounded-xl px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="flex-1 bg-slate-700/60 border border-slate-600/50 rounded-xl px-3 py-2 text-sm text-center text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <input
               type="number"
@@ -98,19 +104,22 @@ function SortableExerciseCard({ re, exercise, sets, onAddSet, onUpdateSet, onDel
               defaultValue={set.reps || ''}
               placeholder="0"
               onBlur={(e) => onUpdateSet(set, 'reps', e.target.value)}
-              className="flex-1 bg-gray-100 rounded-xl px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="flex-1 bg-slate-700/60 border border-slate-600/50 rounded-xl px-3 py-2 text-sm text-center text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <button
               onClick={() => onDeleteSet(set.id!, re.id!)}
-              className="w-8 text-gray-300 active:text-red-400 text-xl text-center leading-none"
-            >×</button>
+              className="w-8 text-slate-600 active:text-red-400 flex items-center justify-center"
+            >
+              <X size={16} />
+            </button>
           </div>
         ))}
         <button
           onClick={() => onAddSet(re.id!)}
-          className="mt-1 w-full text-sm text-primary-500 py-1.5 rounded-xl border border-dashed border-primary-300"
+          className="mt-1 w-full text-sm text-primary-400 py-2 rounded-xl border border-dashed border-slate-600 active:bg-slate-700/50 flex items-center justify-center gap-1.5"
         >
-          + Agregar serie
+          <Plus size={14} />
+          Agregar serie
         </button>
       </div>
     </div>
@@ -222,32 +231,38 @@ export default function RoutineDetailPage() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="flex items-center gap-3 px-4 py-4 bg-white border-b border-gray-100">
-        <button onClick={() => navigate('/')} className="text-gray-400 text-2xl p-1">←</button>
+      <div className="flex items-center gap-3 px-4 py-4 bg-slate-900 border-b border-slate-800">
+        <button onClick={() => navigate('/')} className="text-slate-400 p-1.5 rounded-xl active:bg-slate-800">
+          <ArrowLeft size={20} />
+        </button>
         {editingName ? (
           <input
             autoFocus
             defaultValue={routine.name}
             onBlur={(e) => handleRenameRoutine(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleRenameRoutine((e.target as HTMLInputElement).value)}
-            className="flex-1 text-lg font-semibold text-gray-900 focus:outline-none border-b-2 border-primary-500 pb-0.5"
+            className="flex-1 text-lg font-semibold text-white bg-transparent focus:outline-none border-b-2 border-primary-500 pb-0.5"
           />
         ) : (
-          <h1 className="flex-1 text-lg font-semibold text-gray-900 cursor-pointer" onClick={() => setEditingName(true)}>
+          <h1 className="flex-1 text-lg font-semibold text-white cursor-pointer" onClick={() => setEditingName(true)}>
             {routine.name}
           </h1>
         )}
         {!editingName && (
-          <button onClick={() => setEditingName(true)} className="text-gray-400 text-sm px-2">✎</button>
+          <button onClick={() => setEditingName(true)} className="text-slate-500 p-1.5 rounded-xl active:bg-slate-800">
+            <Pencil size={14} />
+          </button>
         )}
       </div>
 
       <div className="flex-1 px-4 py-4 flex flex-col gap-4">
         {(!routineExercises || routineExercises.length === 0) && (
-          <div className="text-center py-12 text-gray-400">
-            <p className="text-4xl mb-3">🏋️</p>
-            <p className="font-medium">Sin ejercicios todavía</p>
-            <p className="text-sm">Tocá el botón para agregar</p>
+          <div className="text-center py-12">
+            <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-slate-700">
+              <Dumbbell size={28} className="text-primary-400" strokeWidth={1.5} />
+            </div>
+            <p className="font-semibold text-slate-300">Sin ejercicios todavía</p>
+            <p className="text-sm text-slate-500 mt-1">Tocá el botón para agregar</p>
           </div>
         )}
 
@@ -281,9 +296,9 @@ export default function RoutineDetailPage() {
 
         <button
           onClick={() => setShowPicker(true)}
-          className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 active:border-primary-300 active:text-primary-500 flex items-center justify-center gap-2"
+          className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-700 text-slate-500 active:border-primary-500/50 active:text-primary-400 flex items-center justify-center gap-2"
         >
-          <span className="text-xl">+</span>
+          <Plus size={18} />
           <span className="font-medium">Agregar ejercicio</span>
         </button>
       </div>

@@ -16,6 +16,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "dexie": "^4.0.10",
     "dexie-react-hooks": "^1.1.7",
+    "lucide-react": "^0.577.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.4.0",

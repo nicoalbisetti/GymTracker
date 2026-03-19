@@ -1,15 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/db/database';
-
-const TrashIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6"/>
-    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-    <path d="M10 11v6M14 11v6"/>
-    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-  </svg>
-);
+import { Trash2, ChevronRight, CalendarDays, Clock, Timer } from 'lucide-react';
 
 export default function HistoryPage() {
   const navigate = useNavigate();
@@ -33,13 +25,15 @@ export default function HistoryPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <h1 className="text-2xl font-bold text-gray-900 pt-2">Historial</h1>
+      <h1 className="text-2xl font-bold text-white tracking-tight pt-2">Historial</h1>
 
       {sessions?.length === 0 && (
-        <div className="text-center py-20 text-gray-400">
-          <p className="text-5xl mb-3">📅</p>
-          <p className="font-medium text-gray-600">Sin sesiones todavía</p>
-          <p className="text-sm mt-1">Ejecutá una rutina para verla acá</p>
+        <div className="text-center py-20">
+          <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-700">
+            <CalendarDays size={32} className="text-primary-400" strokeWidth={1.5} />
+          </div>
+          <p className="font-semibold text-slate-300">Sin sesiones todavía</p>
+          <p className="text-sm mt-1 text-slate-500">Ejecutá una rutina para verla acá</p>
         </div>
       )}
 
@@ -50,32 +44,42 @@ export default function HistoryPage() {
           return (
             <div
               key={session.id}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+              className="bg-slate-800 rounded-2xl border border-slate-700/50 overflow-hidden"
             >
               <button
                 onClick={() => navigate(`/history/${session.id}`)}
-                className="w-full p-4 text-left active:bg-gray-50 flex items-center justify-between"
+                className="w-full p-4 text-left active:bg-slate-700/50 flex items-center gap-3"
               >
-                <div>
-                  <p className="font-semibold text-gray-900">{session.routineName}</p>
-                  <p className="text-sm text-gray-400 mt-0.5">
-                    {date.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    {' · '}{date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-white">{session.routineName}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <Clock size={12} className="text-slate-500 flex-shrink-0" />
+                    <p className="text-sm text-slate-400 truncate">
+                      {date.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                      {' · '}{date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-1 ml-3">
-                  {duration && <span className="text-xs bg-primary-50 text-primary-500 rounded-full px-2 py-1">{duration}</span>}
-                  {!session.finishedAt && <span className="text-xs bg-yellow-50 text-yellow-600 rounded-full px-2 py-1">Incompleta</span>}
-                  <span className="text-gray-300 text-xl">›</span>
+                <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                  {duration && (
+                    <span className="inline-flex items-center gap-1 text-xs bg-primary-500/15 text-primary-400 font-medium rounded-full px-2.5 py-1">
+                      <Timer size={11} />
+                      {duration}
+                    </span>
+                  )}
+                  {!session.finishedAt && (
+                    <span className="text-xs bg-amber-500/15 text-amber-400 font-medium rounded-full px-2.5 py-1">Incompleta</span>
+                  )}
+                  <ChevronRight size={16} className="text-slate-600" />
                 </div>
               </button>
-              <div className="border-t border-gray-50 px-4 py-2 flex justify-end">
+              <div className="border-t border-slate-700/50 px-4 py-2 flex justify-end">
                 <button
                   onClick={(e) => deleteSession(session.id!, e)}
-                  className="text-gray-400 active:text-red-500 p-1"
+                  className="text-slate-600 active:text-red-400 p-2 rounded-xl"
                   title="Eliminar sesión"
                 >
-                  <TrashIcon />
+                  <Trash2 size={15} />
                 </button>
               </div>
             </div>
