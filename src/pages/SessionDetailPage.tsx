@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/db/database';
-import { ArrowLeft, CalendarDays, Clock, Timer, ClipboardX } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Timer, ClipboardList } from 'lucide-react';
 
 export default function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -45,30 +45,30 @@ export default function SessionDetailPage() {
   return (
     <div className="flex flex-col min-h-full">
       {/* Header */}
-      <div className="bg-slate-900 border-b border-slate-800 px-4 py-4">
+      <div className="bg-slate-900/80 border-b border-slate-800 px-4 py-4">
         <div className="flex items-center gap-3 mb-3">
           <button onClick={() => navigate('/history')} className="text-slate-400 p-1.5 rounded-xl active:bg-slate-800">
-            <ArrowLeft size={22} />
+            <ArrowLeft size={20} />
           </button>
           <h1 className="text-lg font-bold text-white tracking-tight">{session.routineName}</h1>
         </div>
         <div className="flex flex-wrap gap-3">
           <span className="inline-flex items-center gap-1.5 text-sm text-slate-400">
-            <CalendarDays size={14} className="text-slate-500" />
+            <Calendar size={14} />
             {date.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </span>
           <span className="inline-flex items-center gap-1.5 text-sm text-slate-400">
-            <Clock size={14} className="text-slate-500" />
+            <Clock size={14} />
             {date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
           </span>
           {duration && (
-            <span className="inline-flex items-center gap-1.5 text-sm bg-primary-500/15 text-primary-400 font-medium rounded-full px-2.5 py-0.5">
-              <Timer size={12} />
+            <span className="inline-flex items-center gap-1.5 text-sm text-slate-400">
+              <Timer size={14} />
               {duration}
             </span>
           )}
           {!session.finishedAt && (
-            <span className="text-sm bg-amber-500/15 text-amber-400 font-medium rounded-full px-2.5 py-0.5">Incompleta</span>
+            <span className="text-sm text-yellow-400 bg-yellow-500/20 px-2 rounded-full">Incompleta</span>
           )}
         </div>
       </div>
@@ -78,7 +78,7 @@ export default function SessionDetailPage() {
         {records.length === 0 && (
           <div className="text-center py-16">
             <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-slate-700">
-              <ClipboardX size={26} className="text-slate-500" strokeWidth={1.5} />
+              <ClipboardList size={28} className="text-slate-500" strokeWidth={1.5} />
             </div>
             <p className="text-slate-400">No se completó ninguna serie</p>
           </div>
@@ -92,7 +92,7 @@ export default function SessionDetailPage() {
                 const exerciseName = key.split('__')[1];
                 return (
                   <div key={key} className="bg-slate-800 rounded-2xl border border-slate-700/50 overflow-hidden">
-                    <div className="px-4 py-3 bg-slate-700/40">
+                    <div className="px-4 py-3 bg-slate-900/80">
                       <p className="font-semibold text-white">{exerciseName}</p>
                     </div>
                     <div className="px-4 py-3 flex flex-col gap-2">
@@ -104,10 +104,10 @@ export default function SessionDetailPage() {
                       {sets.map((r) => (
                         <div key={r.id} className="flex items-center gap-2">
                           <span className="w-8 text-sm text-slate-500 text-center font-medium">{r.setNumber}</span>
-                          <div className="flex-1 bg-slate-700 border border-slate-600/50 rounded-xl px-3 py-2 text-sm text-center text-slate-300">
+                          <div className="flex-1 bg-slate-700/50 rounded-xl px-3 py-2 text-sm text-center text-slate-200">
                             {r.weight > 0 ? `${r.weight} kg` : '—'}
                           </div>
-                          <div className="flex-1 bg-slate-700 border border-slate-600/50 rounded-xl px-3 py-2 text-sm text-center text-slate-300">
+                          <div className="flex-1 bg-slate-700/50 rounded-xl px-3 py-2 text-sm text-center text-slate-200">
                             {r.reps} reps
                           </div>
                         </div>

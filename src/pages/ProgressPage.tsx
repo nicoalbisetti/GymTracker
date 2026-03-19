@@ -88,9 +88,9 @@ export default function ProgressPage() {
                   <p className="text-xs text-slate-500 mb-4">Peso máximo por sesión (kg)</p>
                   <ResponsiveContainer width="100%" height={160}>
                     <LineChart data={ex.points} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} />
-                      <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                      <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} />
                       <Tooltip
                         formatter={(value) => [`${value} kg`, 'Peso máx.']}
                         labelStyle={{ fontSize: 12, color: '#f1f5f9' }}

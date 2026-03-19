@@ -54,11 +54,11 @@ export default function ExercisePicker({ onConfirm, onClose, excludeIds = [] }: 
   const selectedList = Array.from(selected.values());
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col">
+    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-4 border-b border-slate-800">
         <button onClick={onClose} className="text-slate-400 p-1.5 rounded-xl active:bg-slate-800">
-          <ArrowLeft size={22} />
+          <ArrowLeft size={20} />
         </button>
         <h2 className="text-lg font-semibold text-white flex-1 tracking-tight">Agregar ejercicios</h2>
         {selected.size > 0 && (
@@ -111,7 +111,7 @@ export default function ExercisePicker({ onConfirm, onClose, excludeIds = [] }: 
                   onClick={() => toggleExercise(ex)}
                   className={`w-full text-left px-4 py-3.5 border-b border-slate-800/60 flex items-center justify-between transition-colors ${isSelected ? 'bg-primary-500/10' : 'active:bg-slate-800'}`}
                 >
-                  <span className={`text-sm ${isSelected ? 'text-primary-300 font-medium' : 'text-slate-200'}`}>{ex.name}</span>
+                  <span className={`text-sm ${isSelected ? 'text-primary-400 font-medium' : 'text-slate-200'}`}>{ex.name}</span>
                   <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0 ${isSelected ? 'bg-primary-500 border-primary-500' : 'border-slate-600'}`}>
                     {isSelected && <Check size={13} className="text-white" strokeWidth={3} />}
                   </span>
@@ -123,14 +123,14 @@ export default function ExercisePicker({ onConfirm, onClose, excludeIds = [] }: 
       </div>
 
       {/* Confirm button */}
-      <div className="px-4 py-4 border-t border-slate-800 bg-slate-900">
+      <div className="px-4 py-4 border-t border-slate-800 bg-slate-950">
         <button
           onClick={() => selectedList.length > 0 && onConfirm(selectedList)}
           disabled={selectedList.length === 0}
           className={`w-full py-3.5 rounded-2xl font-semibold text-base transition-colors ${
             selectedList.length > 0
               ? 'bg-primary-500 text-white active:bg-primary-600'
-              : 'bg-slate-800 text-slate-600 cursor-default'
+              : 'bg-slate-800 text-slate-500 cursor-default'
           }`}
         >
           {selectedList.length === 0
