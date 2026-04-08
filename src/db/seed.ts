@@ -1,6 +1,6 @@
 import { db } from './database';
 
-const SEED_VERSION = 6;
+const SEED_VERSION = 7;
 const SEED_VERSION_KEY = 'gymtracker_seed_v';
 
 const EXERCISES = [
@@ -40,42 +40,42 @@ const EXERCISES = [
   { id: 29, name: 'Upright Row', muscleGroup: 'Hombros' },
   { id: 30, name: 'Dumbbell Shrugs', muscleGroup: 'Hombros' },
 
-  // Bíceps
-  { id: 31, name: 'Straight Bar Curl', muscleGroup: 'Bíceps' },
-  { id: 32, name: 'EZ Bar Curl', muscleGroup: 'Bíceps' },
-  { id: 33, name: 'Dumbbell Curl', muscleGroup: 'Bíceps' },
-  { id: 34, name: 'Hammer Curl', muscleGroup: 'Bíceps' },
-  { id: 35, name: 'Concentration Curl', muscleGroup: 'Bíceps' },
-  { id: 36, name: 'Preacher Curl', muscleGroup: 'Bíceps' },
-  { id: 37, name: 'Cable Curl', muscleGroup: 'Bíceps' },
-  { id: 38, name: 'Spider Curl', muscleGroup: 'Bíceps' },
+  // Brazos (Bíceps + Tríceps)
+  { id: 31, name: 'Straight Bar Curl', muscleGroup: 'Brazos' },
+  { id: 32, name: 'EZ Bar Curl', muscleGroup: 'Brazos' },
+  { id: 33, name: 'Dumbbell Curl', muscleGroup: 'Brazos' },
+  { id: 34, name: 'Hammer Curl', muscleGroup: 'Brazos' },
+  { id: 35, name: 'Concentration Curl', muscleGroup: 'Brazos' },
+  { id: 36, name: 'Preacher Curl', muscleGroup: 'Brazos' },
+  { id: 37, name: 'Cable Curl', muscleGroup: 'Brazos' },
+  { id: 38, name: 'Spider Curl', muscleGroup: 'Brazos' },
 
-  // Tríceps
-  { id: 39, name: 'EZ Bar Skull Crusher', muscleGroup: 'Tríceps' },
-  { id: 40, name: 'Dumbbell Skull Crusher', muscleGroup: 'Tríceps' },
-  { id: 41, name: 'Tricep Pushdown (Bar)', muscleGroup: 'Tríceps' },
-  { id: 42, name: 'Tricep Pushdown (Rope)', muscleGroup: 'Tríceps' },
-  { id: 43, name: 'Close Grip Bench Press', muscleGroup: 'Tríceps' },
-  { id: 44, name: 'Bench Dips', muscleGroup: 'Tríceps' },
-  { id: 45, name: 'Tricep Kickback', muscleGroup: 'Tríceps' },
-  { id: 46, name: 'Overhead Tricep Extension', muscleGroup: 'Tríceps' },
+  // Brazos (cont.)
+  { id: 39, name: 'EZ Bar Skull Crusher', muscleGroup: 'Brazos' },
+  { id: 40, name: 'Dumbbell Skull Crusher', muscleGroup: 'Brazos' },
+  { id: 41, name: 'Tricep Pushdown (Bar)', muscleGroup: 'Brazos' },
+  { id: 42, name: 'Tricep Pushdown (Rope)', muscleGroup: 'Brazos' },
+  { id: 43, name: 'Close Grip Bench Press', muscleGroup: 'Brazos' },
+  { id: 44, name: 'Bench Dips', muscleGroup: 'Brazos' },
+  { id: 45, name: 'Tricep Kickback', muscleGroup: 'Brazos' },
+  { id: 46, name: 'Overhead Tricep Extension', muscleGroup: 'Brazos' },
 
-  // Cuádriceps
-  { id: 47, name: 'Barbell Squat', muscleGroup: 'Cuádriceps' },
-  { id: 48, name: 'Front Squat', muscleGroup: 'Cuádriceps' },
-  { id: 49, name: 'Bulgarian Split Squat', muscleGroup: 'Cuádriceps' },
-  { id: 50, name: 'Leg Press', muscleGroup: 'Cuádriceps' },
-  { id: 51, name: 'Leg Extension', muscleGroup: 'Cuádriceps' },
-  { id: 52, name: 'Barbell Lunges', muscleGroup: 'Cuádriceps' },
-  { id: 53, name: 'Dumbbell Lunges', muscleGroup: 'Cuádriceps' },
-  { id: 54, name: 'Hack Squat', muscleGroup: 'Cuádriceps' },
+  // Piernas (Cuádriceps + Isquiotibiales + Pantorrillas)
+  { id: 47, name: 'Barbell Squat', muscleGroup: 'Piernas' },
+  { id: 48, name: 'Front Squat', muscleGroup: 'Piernas' },
+  { id: 49, name: 'Bulgarian Split Squat', muscleGroup: 'Piernas' },
+  { id: 50, name: 'Leg Press', muscleGroup: 'Piernas' },
+  { id: 51, name: 'Leg Extension', muscleGroup: 'Piernas' },
+  { id: 52, name: 'Barbell Lunges', muscleGroup: 'Piernas' },
+  { id: 53, name: 'Dumbbell Lunges', muscleGroup: 'Piernas' },
+  { id: 54, name: 'Hack Squat', muscleGroup: 'Piernas' },
 
-  // Isquiotibiales
-  { id: 55, name: 'Lying Leg Curl', muscleGroup: 'Isquiotibiales' },
-  { id: 56, name: 'Seated Leg Curl', muscleGroup: 'Isquiotibiales' },
-  { id: 57, name: 'Romanian Deadlift', muscleGroup: 'Isquiotibiales' },
-  { id: 58, name: 'Good Mornings', muscleGroup: 'Isquiotibiales' },
-  { id: 59, name: 'Stiff-Leg Deadlift', muscleGroup: 'Isquiotibiales' },
+  // Piernas (cont.)
+  { id: 55, name: 'Lying Leg Curl', muscleGroup: 'Piernas' },
+  { id: 56, name: 'Seated Leg Curl', muscleGroup: 'Piernas' },
+  { id: 57, name: 'Romanian Deadlift', muscleGroup: 'Piernas' },
+  { id: 58, name: 'Good Mornings', muscleGroup: 'Piernas' },
+  { id: 59, name: 'Stiff-Leg Deadlift', muscleGroup: 'Piernas' },
 
   // Glúteos
   { id: 60, name: 'Barbell Hip Thrust', muscleGroup: 'Glúteos' },
@@ -85,11 +85,11 @@ const EXERCISES = [
   { id: 64, name: 'Sumo Squat', muscleGroup: 'Glúteos' },
   { id: 65, name: 'Glute Bridge', muscleGroup: 'Glúteos' },
 
-  // Pantorrillas
-  { id: 66, name: 'Standing Calf Raises', muscleGroup: 'Pantorrillas' },
-  { id: 67, name: 'Seated Calf Raises', muscleGroup: 'Pantorrillas' },
-  { id: 68, name: 'Leg Press Calf Raises', muscleGroup: 'Pantorrillas' },
-  { id: 69, name: 'Donkey Calf Raises', muscleGroup: 'Pantorrillas' },
+  // Piernas (cont.)
+  { id: 66, name: 'Standing Calf Raises', muscleGroup: 'Piernas' },
+  { id: 67, name: 'Seated Calf Raises', muscleGroup: 'Piernas' },
+  { id: 68, name: 'Leg Press Calf Raises', muscleGroup: 'Piernas' },
+  { id: 69, name: 'Donkey Calf Raises', muscleGroup: 'Piernas' },
 
   // Core
   { id: 70, name: 'Plank', muscleGroup: 'Core' },

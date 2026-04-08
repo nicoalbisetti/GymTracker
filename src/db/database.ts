@@ -35,6 +35,28 @@ class GymTrackerDB extends Dexie {
       workoutSessions:   '++id, routineId, startedAt',
       workoutSetRecords: '++id, sessionId, exerciseId',
     });
+    this.version(4).stores({
+      exercises:         '++id, name, muscleGroup',
+      routines:          '++id, createdAt',
+      routineExercises:  '++id, routineId, exerciseId',
+      sets:              '++id, routineExerciseId',
+      workoutSessions:   '++id, routineId, startedAt',
+      workoutSetRecords: '++id, sessionId, exerciseId',
+    }).upgrade(async (tx) => {
+      const muscleGroupMap: Record<string, string> = {
+        'Bíceps': 'Brazos',
+        'Tríceps': 'Brazos',
+        'Cuádriceps': 'Piernas',
+        'Isquiotibiales': 'Piernas',
+        'Pantorrillas': 'Piernas',
+      };
+      await tx.table('exercises').toCollection().modify((ex) => {
+        if (muscleGroupMap[ex.muscleGroup]) ex.muscleGroup = muscleGroupMap[ex.muscleGroup];
+      });
+      await tx.table('workoutSetRecords').toCollection().modify((r) => {
+        if (muscleGroupMap[r.muscleGroup]) r.muscleGroup = muscleGroupMap[r.muscleGroup];
+      });
+    });
   }
 }
 

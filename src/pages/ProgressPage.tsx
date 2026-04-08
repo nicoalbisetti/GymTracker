@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { db } from '@/db/database';
 import { TrendingUp } from 'lucide-react';
+
+const COLORS = [
+  '#8b5cf6', '#06b6d4', '#f59e0b', '#10b981',
+  '#f43f5e', '#3b82f6', '#a78bfa', '#fbbf24',
+];
 
 export default function ProgressPage() {
   const records = useLiveQuery(() => db.workoutSetRecords.toArray());
@@ -17,33 +22,41 @@ export default function ProgressPage() {
 
   const activeMuscle = selectedMuscle ?? muscleGroups[0] ?? null;
 
-  const exerciseCharts = useMemo(() => {
-    if (!records || !activeMuscle) return [];
+  const chartData = useMemo(() => {
+    if (!records || !activeMuscle) return { exercises: [], points: [] };
+
     const filtered = records.filter((r) => r.muscleGroup === activeMuscle);
 
-    const byExercise = new Map<number, { name: string; data: Map<string, number> }>();
+    // Build per-exercise, per-date max weight
+    const byExercise = new Map<string, Map<string, number>>();
     for (const r of filtered) {
-      if (!byExercise.has(r.exerciseId)) {
-        byExercise.set(r.exerciseId, { name: r.exerciseName, data: new Map() });
-      }
+      if (!byExercise.has(r.exerciseName)) byExercise.set(r.exerciseName, new Map());
+      const dateMap = byExercise.get(r.exerciseName)!;
       const date = r.completedAt.slice(0, 10);
-      const ex = byExercise.get(r.exerciseId)!;
-      ex.data.set(date, Math.max(ex.data.get(date) ?? 0, r.weight));
+      dateMap.set(date, Math.max(dateMap.get(date) ?? 0, r.weight));
     }
 
-    return [...byExercise.values()]
-      .map(({ name, data }) => ({
-        name,
-        points: [...data.entries()]
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([date, peso]) => ({
-            date: new Date(date + 'T12:00:00').toLocaleDateString('es-AR', {
-              day: 'numeric', month: 'short',
-            }),
-            peso,
-          })),
-      }))
-      .filter((ex) => ex.points.length >= 1);
+    const exercises = [...byExercise.keys()].filter((name) => byExercise.get(name)!.size >= 1);
+    if (exercises.length === 0) return { exercises: [], points: [] };
+
+    // Collect all unique dates, sorted
+    const allDates = [...new Set(
+      exercises.flatMap((name) => [...byExercise.get(name)!.keys()])
+    )].sort();
+
+    const points = allDates.map((date) => {
+      const label = new Date(date + 'T12:00:00').toLocaleDateString('es-AR', {
+        day: 'numeric', month: 'short',
+      });
+      const entry: Record<string, string | number> = { date: label };
+      for (const name of exercises) {
+        const val = byExercise.get(name)!.get(date);
+        if (val !== undefined) entry[name] = val;
+      }
+      return entry;
+    });
+
+    return { exercises, points };
   }, [records, activeMuscle]);
 
   if (!records) return null;
@@ -78,36 +91,38 @@ export default function ProgressPage() {
             ))}
           </div>
 
-          {exerciseCharts.length === 0 ? (
+          {chartData.exercises.length === 0 ? (
             <p className="text-center text-slate-500 py-10">Sin datos para este grupo muscular</p>
           ) : (
-            <div className="flex flex-col gap-5">
-              {exerciseCharts.map((ex) => (
-                <div key={ex.name} className="bg-slate-800 rounded-2xl border border-slate-700/50 p-4">
-                  <p className="font-semibold text-white mb-0.5">{ex.name}</p>
-                  <p className="text-xs text-slate-500 mb-4">Peso máximo por sesión (kg)</p>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <LineChart data={ex.points} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                      <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                      <Tooltip
-                        formatter={(value) => [`${value} kg`, 'Peso máx.']}
-                        labelStyle={{ fontSize: 12, color: '#f1f5f9' }}
-                        contentStyle={{ fontSize: 12, borderRadius: 10, backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f1f5f9' }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="peso"
-                        stroke="#8b5cf6"
-                        strokeWidth={2.5}
-                        dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 0 }}
-                        activeDot={{ r: 6, fill: '#a78bfa' }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              ))}
+            <div className="bg-slate-800 rounded-2xl border border-slate-700/50 p-4">
+              <p className="text-xs text-slate-500 mb-4">Peso máximo por sesión (kg)</p>
+              <ResponsiveContainer width="100%" height={240}>
+                <LineChart data={chartData.points} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                  <Tooltip
+                    formatter={(value, name) => [`${value} kg`, name]}
+                    labelStyle={{ fontSize: 12, color: '#f1f5f9' }}
+                    contentStyle={{ fontSize: 12, borderRadius: 10, backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f1f5f9' }}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: 11, color: '#94a3b8', paddingTop: 12 }}
+                  />
+                  {chartData.exercises.map((name, i) => (
+                    <Line
+                      key={name}
+                      type="monotone"
+                      dataKey={name}
+                      stroke={COLORS[i % COLORS.length]}
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: COLORS[i % COLORS.length], strokeWidth: 0 }}
+                      activeDot={{ r: 5 }}
+                      connectNulls={false}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           )}
         </>
