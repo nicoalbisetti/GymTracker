@@ -1,6 +1,6 @@
 import { db } from './database';
 
-const SEED_VERSION = 7;
+const SEED_VERSION = 8;
 const SEED_VERSION_KEY = 'gymtracker_seed_v';
 
 const EXERCISES = [
@@ -36,7 +36,7 @@ const EXERCISES = [
   { id: 25, name: 'Cable Lateral Raises', muscleGroup: 'Hombros' },
   { id: 26, name: 'Front Raises', muscleGroup: 'Hombros' },
   { id: 27, name: 'Rear Delt Flyes', muscleGroup: 'Hombros' },
-  { id: 28, name: 'Face Pull', muscleGroup: 'Hombros' },
+  { id: 28, name: 'Face Pull', muscleGroup: 'Espalda' },
   { id: 29, name: 'Upright Row', muscleGroup: 'Hombros' },
   { id: 30, name: 'Dumbbell Shrugs', muscleGroup: 'Hombros' },
 

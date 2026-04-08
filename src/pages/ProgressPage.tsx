@@ -23,17 +23,19 @@ export default function ProgressPage() {
   const activeMuscle = selectedMuscle ?? muscleGroups[0] ?? null;
 
   const chartData = useMemo(() => {
-    if (!records || !activeMuscle) return { exercises: [], points: [] };
+    if (!records || !activeMuscle) return { exercises: [], points: [], useReps: false };
 
     const filtered = records.filter((r) => r.muscleGroup === activeMuscle);
+    const useReps = activeMuscle === 'Core';
 
-    // Build per-exercise, per-date max weight
+    // Build per-exercise, per-date max weight (or reps for Core)
     const byExercise = new Map<string, Map<string, number>>();
     for (const r of filtered) {
       if (!byExercise.has(r.exerciseName)) byExercise.set(r.exerciseName, new Map());
       const dateMap = byExercise.get(r.exerciseName)!;
       const date = r.completedAt.slice(0, 10);
-      dateMap.set(date, Math.max(dateMap.get(date) ?? 0, r.weight));
+      const value = useReps ? r.reps : r.weight;
+      dateMap.set(date, Math.max(dateMap.get(date) ?? 0, value));
     }
 
     const exercises = [...byExercise.keys()].filter((name) => byExercise.get(name)!.size >= 1);
@@ -56,7 +58,7 @@ export default function ProgressPage() {
       return entry;
     });
 
-    return { exercises, points };
+    return { exercises, points, useReps };
   }, [records, activeMuscle]);
 
   if (!records) return null;
@@ -95,14 +97,16 @@ export default function ProgressPage() {
             <p className="text-center text-slate-500 py-10">Sin datos para este grupo muscular</p>
           ) : (
             <div className="bg-slate-800 rounded-2xl border border-slate-700/50 p-4">
-              <p className="text-xs text-slate-500 mb-4">Peso máximo por sesión (kg)</p>
+              <p className="text-xs text-slate-500 mb-4">
+                {chartData.useReps ? 'Repeticiones máximas por sesión' : 'Peso máximo por sesión (kg)'}
+              </p>
               <ResponsiveContainer width="100%" height={240}>
                 <LineChart data={chartData.points} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} />
                   <Tooltip
-                    formatter={(value, name) => [`${value} kg`, name]}
+                    formatter={(value, name) => [`${value}${chartData.useReps ? ' reps' : ' kg'}`, name]}
                     labelStyle={{ fontSize: 12, color: '#f1f5f9' }}
                     contentStyle={{ fontSize: 12, borderRadius: 10, backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f1f5f9' }}
                   />

@@ -57,6 +57,19 @@ class GymTrackerDB extends Dexie {
         if (muscleGroupMap[r.muscleGroup]) r.muscleGroup = muscleGroupMap[r.muscleGroup];
       });
     });
+    this.version(5).stores({
+      exercises:         '++id, name, muscleGroup',
+      routines:          '++id, createdAt',
+      routineExercises:  '++id, routineId, exerciseId',
+      sets:              '++id, routineExerciseId',
+      workoutSessions:   '++id, routineId, startedAt',
+      workoutSetRecords: '++id, sessionId, exerciseId',
+    }).upgrade(async (tx) => {
+      await tx.table('exercises').where('name').equals('Face Pull').modify({ muscleGroup: 'Espalda' });
+      await tx.table('workoutSetRecords').toCollection().modify((r) => {
+        if (r.exerciseName === 'Face Pull') r.muscleGroup = 'Espalda';
+      });
+    });
   }
 }
 
