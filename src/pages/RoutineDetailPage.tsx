@@ -170,18 +170,30 @@ export default function RoutineDetailPage() {
     const oldIndex = routineExercises.findIndex(re => re.id === active.id);
     const newIndex = routineExercises.findIndex(re => re.id === over.id);
     const reordered = arrayMove(routineExercises, oldIndex, newIndex);
-    await Promise.all(reordered.map((re, i) => db.routineExercises.update(re.id!, { orderIndex: i })));
+    try {
+      await Promise.all(reordered.map((re, i) => db.routineExercises.update(re.id!, { orderIndex: i })));
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+    }
   }
 
   async function handleAddExercises(exercises: Exercise[]) {
     const baseOrder = routineExercises?.length ?? 0;
-    for (let i = 0; i < exercises.length; i++) {
-      const routineExerciseId = await db.routineExercises.add({
-        routineId, exerciseId: exercises[i].id!, orderIndex: baseOrder + i, restSeconds: 60,
+    try {
+      await db.transaction('rw', [db.routineExercises, db.sets], async () => {
+        for (let i = 0; i < exercises.length; i++) {
+          const routineExerciseId = await db.routineExercises.add({
+            routineId, exerciseId: exercises[i].id!, orderIndex: baseOrder + i, restSeconds: 60,
+          });
+          await db.sets.add({ routineExerciseId: routineExerciseId as number, setNumber: 1, reps: 10, weight: 0 });
+        }
       });
-      await db.sets.add({ routineExerciseId: routineExerciseId as number, setNumber: 1, reps: 10, weight: 0 });
+      setShowPicker(false);
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
     }
-    setShowPicker(false);
   }
 
   async function handleAddSet(routineExerciseId: number) {
@@ -189,31 +201,55 @@ export default function RoutineDetailPage() {
       .filter(s => s.routineExerciseId === routineExerciseId)
       .sort((a, b) => a.setNumber - b.setNumber);
     const last = existing[existing.length - 1];
-    await db.sets.add({
-      routineExerciseId,
-      setNumber: existing.length + 1,
-      reps: last?.reps ?? 10,
-      weight: last?.weight ?? 0,
-    });
+    try {
+      await db.sets.add({
+        routineExerciseId,
+        setNumber: existing.length + 1,
+        reps: last?.reps ?? 10,
+        weight: last?.weight ?? 0,
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+    }
   }
 
   async function handleUpdateSet(set: ExerciseSet, field: 'reps' | 'weight', value: string) {
-    await db.sets.update(set.id!, { [field]: parseFloat(value) || 0 });
+    try {
+      await db.sets.update(set.id!, { [field]: parseFloat(value) || 0 });
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+    }
   }
 
   async function handleDeleteSet(setId: number, routineExerciseId: number) {
-    await db.sets.delete(setId);
-    const remaining = (allSets ?? [])
-      .filter(s => s.routineExerciseId === routineExerciseId && s.id !== setId)
-      .sort((a, b) => a.setNumber - b.setNumber);
-    for (let i = 0; i < remaining.length; i++) {
-      await db.sets.update(remaining[i].id!, { setNumber: i + 1 });
+    try {
+      await db.transaction('rw', [db.sets], async () => {
+        await db.sets.delete(setId);
+        const remaining = (allSets ?? [])
+          .filter(s => s.routineExerciseId === routineExerciseId && s.id !== setId)
+          .sort((a, b) => a.setNumber - b.setNumber);
+        for (let i = 0; i < remaining.length; i++) {
+          await db.sets.update(remaining[i].id!, { setNumber: i + 1 });
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
     }
   }
 
   async function handleRemoveExercise(routineExerciseId: number) {
-    await db.sets.where('routineExerciseId').equals(routineExerciseId).delete();
-    await db.routineExercises.delete(routineExerciseId);
+    try {
+      await db.transaction('rw', [db.routineExercises, db.sets], async () => {
+        await db.sets.where('routineExerciseId').equals(routineExerciseId).delete();
+        await db.routineExercises.delete(routineExerciseId);
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+    }
   }
 
   async function handleUpdateRest(routineExerciseId: number, restSeconds: number) {
@@ -221,8 +257,13 @@ export default function RoutineDetailPage() {
   }
 
   async function handleRenameRoutine(newName: string) {
-    if (newName.trim()) await db.routines.update(routineId, { name: newName.trim() });
-    setEditingName(false);
+    try {
+      if (newName.trim()) await db.routines.update(routineId, { name: newName.trim() });
+      setEditingName(false);
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+    }
   }
 
   if (!routine) return null;

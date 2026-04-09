@@ -9,57 +9,81 @@ export default function HomePage() {
   const routines = useLiveQuery(() => db.routines.orderBy('createdAt').reverse().toArray());
 
   async function createRoutine() {
-    const id = await db.routines.add({
-      name: 'Nueva rutina',
-      createdAt: new Date().toISOString(),
-    });
-    navigate(`/routine/${id}`);
+    try {
+      const id = await db.routines.add({
+        name: 'Nueva rutina',
+        createdAt: new Date().toISOString(),
+      });
+      navigate(`/routine/${id}`);
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+    }
   }
 
   async function deleteRoutine(routine: Routine, e: React.MouseEvent) {
     e.stopPropagation();
     if (!confirm(`¿Eliminar "${routine.name}"?`)) return;
-    const routineExercises = await db.routineExercises.where('routineId').equals(routine.id!).toArray();
-    for (const re of routineExercises) {
-      await db.sets.where('routineExerciseId').equals(re.id!).delete();
+    try {
+      await db.transaction('rw', [db.routines, db.routineExercises, db.sets], async () => {
+        const routineExercises = await db.routineExercises.where('routineId').equals(routine.id!).toArray();
+        for (const re of routineExercises) {
+          await db.sets.where('routineExerciseId').equals(re.id!).delete();
+        }
+        await db.routineExercises.where('routineId').equals(routine.id!).delete();
+        await db.routines.delete(routine.id!);
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
     }
-    await db.routineExercises.where('routineId').equals(routine.id!).delete();
-    await db.routines.delete(routine.id!);
   }
 
   async function duplicateRoutine(routine: Routine, e: React.MouseEvent) {
     e.stopPropagation();
-    const newRoutineId = await db.routines.add({
-      name: `Copia de ${routine.name}`,
-      createdAt: new Date().toISOString(),
-    });
-    const routineExercises = await db.routineExercises.where('routineId').equals(routine.id!).toArray();
-    for (const re of routineExercises) {
-      const newReId = await db.routineExercises.add({
-        routineId: newRoutineId as number,
-        exerciseId: re.exerciseId,
-        orderIndex: re.orderIndex,
-        restSeconds: re.restSeconds,
+    try {
+    await db.transaction('rw', [db.routines, db.routineExercises, db.sets], async () => {
+      const newRoutineId = await db.routines.add({
+        name: `Copia de ${routine.name}`,
+        createdAt: new Date().toISOString(),
       });
-      const sets = await db.sets.where('routineExerciseId').equals(re.id!).toArray();
-      for (const set of sets) {
-        await db.sets.add({
-          routineExerciseId: newReId as number,
-          setNumber: set.setNumber,
-          reps: set.reps,
-          weight: set.weight,
+      const routineExercises = await db.routineExercises.where('routineId').equals(routine.id!).toArray();
+      for (const re of routineExercises) {
+        const newReId = await db.routineExercises.add({
+          routineId: newRoutineId as number,
+          exerciseId: re.exerciseId,
+          orderIndex: re.orderIndex,
+          restSeconds: re.restSeconds,
         });
+        const sets = await db.sets.where('routineExerciseId').equals(re.id!).toArray();
+        for (const set of sets) {
+          await db.sets.add({
+            routineExerciseId: newReId as number,
+            setNumber: set.setNumber,
+            reps: set.reps,
+            weight: set.weight,
+          });
+        }
       }
+    });
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
     }
   }
 
   async function startWorkout(routine: Routine) {
-    const sessionId = await db.workoutSessions.add({
-      routineId: routine.id!,
-      routineName: routine.name,
-      startedAt: new Date().toISOString(),
-    });
-    navigate(`/workout/${sessionId}`);
+    try {
+      const sessionId = await db.workoutSessions.add({
+        routineId: routine.id!,
+        routineName: routine.name,
+        startedAt: new Date().toISOString(),
+      });
+      navigate(`/workout/${sessionId}`);
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+    }
   }
 
   return (

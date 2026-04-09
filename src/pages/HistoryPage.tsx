@@ -12,8 +12,15 @@ export default function HistoryPage() {
   async function deleteSession(id: number, e: React.MouseEvent) {
     e.stopPropagation();
     if (!confirm('¿Eliminar esta sesión?')) return;
-    await db.workoutSetRecords.where('sessionId').equals(id).delete();
-    await db.workoutSessions.delete(id);
+    try {
+      await db.transaction('rw', [db.workoutSessions, db.workoutSetRecords], async () => {
+        await db.workoutSetRecords.where('sessionId').equals(id).delete();
+        await db.workoutSessions.delete(id);
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+    }
   }
 
   function formatDuration(startedAt: string, finishedAt?: string) {

@@ -109,6 +109,10 @@ export async function seedExercises() {
   console.log("SEED_VERSION" + SEED_VERSION);
   if (storedVersion >= SEED_VERSION) return;
 
-  await db.exercises.bulkPut(EXERCISES);
+  const existingIds = new Set(await db.exercises.toCollection().primaryKeys() as number[]);
+  const toInsert = EXERCISES.filter((ex) => !existingIds.has(ex.id));
+  if (toInsert.length > 0) {
+    await db.exercises.bulkAdd(toInsert);
+  }
   localStorage.setItem(SEED_VERSION_KEY, String(SEED_VERSION));
 }
