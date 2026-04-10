@@ -88,6 +88,7 @@ export async function importExcel(file: File): Promise<{ success: boolean, error
           routineId,
           routineName,
           startedAt: new Date(fecha).toISOString(),
+          finishedAt: new Date(fecha).toISOString(),
         })
 
         // =========================
