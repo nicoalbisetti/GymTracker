@@ -1,5 +1,4 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
 import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import BottomNav from '@/components/BottomNav';
@@ -12,24 +11,13 @@ import HistoryPage from '@/pages/HistoryPage';
 import SessionDetailPage from '@/pages/SessionDetailPage';
 import ProgressPage from '@/pages/ProgressPage';
 import { SettingsPage } from '@/pages/SettingsPage';
-import { db } from '@/db/database';
 import InstallPrompt from '@/components/InstallPrompt';
-
-;(window as any).db = db
 
 function AppInner() {
   const location = useLocation();
   const fullscreen =
     location.pathname.startsWith('/routine/') ||
     location.pathname.startsWith('/workout/');
-
-  useEffect(() => {
-    async function init() {
-      console.log('🚀 RUNNING SEED');
-      console.log('✅ SEED DONE');
-    }
-    init().catch(console.error);
-  }, []);
 
   return (
     <div className="flex flex-col min-h-full max-w-lg mx-auto">

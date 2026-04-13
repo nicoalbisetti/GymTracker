@@ -1,17 +1,30 @@
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { ArrowLeft, Calendar, Clock, Timer, ClipboardList } from 'lucide-react';
 import { getSessionById, getSessionRecords } from '@/services/historyService';
+import type { WorkoutSession, WorkoutSetRecord } from '@/types';
 
 export default function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
-  const sid = Number(sessionId);
   const navigate = useNavigate();
 
-  const session = useLiveQuery(() => getSessionById(sid), [sid]);
-  const records = useLiveQuery(() => getSessionRecords(sid), [sid]);
+  const [session, setSession] = useState<WorkoutSession | undefined>(undefined);
+  const [records, setRecords] = useState<WorkoutSetRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!session || !records) return null;
+  useEffect(() => {
+    if (!sessionId) return;
+    Promise.all([
+      getSessionById(sessionId),
+      getSessionRecords(sessionId),
+    ]).then(([sess, recs]) => {
+      setSession(sess);
+      setRecords(recs);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, [sessionId]);
+
+  if (loading) return null;
+  if (!session) return null;
 
   const byExercise = records.reduce<Record<string, typeof records>>((acc, r) => {
     const key = `${r.muscleGroup}__${r.exerciseName}`;

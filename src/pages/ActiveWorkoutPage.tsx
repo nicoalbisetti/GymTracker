@@ -1,62 +1,63 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { playBeep } from '@/utils/audio';
-import type { Exercise, ExerciseSet, RoutineExercise } from '@/types';
+import type { Exercise, ExerciseSet, RoutineExercise, WorkoutSession } from '@/types';
 import { Check, Plus, SkipForward } from 'lucide-react';
 import { getWorkoutSession, finishWorkoutSession, recordCompletedSet, addSetDuringWorkout } from '@/services/workoutService';
 import { getRoutineExercises, getSetsForRoutineExercises } from '@/services/routineService';
 import { getExercisesMap } from '@/services/exerciseService';
+import { useAuth } from '@/context/AuthContext';
 
-type SetEdits = Record<number, { reps: number; weight: number }>;
+type SetEdits = Record<string, { reps: number; weight: number }>;
 
 export default function ActiveWorkoutPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
-  const sid = Number(sessionId);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const [completedKeys, setCompletedKeys] = useState<Set<number>>(new Set());
+  const [session, setSession] = useState<WorkoutSession | undefined>(undefined);
+  const [routineExercises, setRoutineExercises] = useState<RoutineExercise[]>([]);
+  const [allSets, setAllSets] = useState<ExerciseSet[]>([]);
+  const [exercises, setExercises] = useState<Record<number, Exercise>>({});
+  const [loading, setLoading] = useState(true);
+
+  const [completedKeys, setCompletedKeys] = useState<Set<string>>(new Set());
   const [setEdits, setSetEdits] = useState<SetEdits>({});
   const [countdown, setCountdown] = useState<number | null>(null);
   const [showGo, setShowGo] = useState(false);
   const endTimeRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const session = useLiveQuery(() => getWorkoutSession(sid), [sid]);
+  const loadData = useCallback(async () => {
+    if (!sessionId) return;
+    const sess = await getWorkoutSession(sessionId);
+    setSession(sess);
+    if (!sess) return;
 
-  const routineExercises = useLiveQuery(
-    async () => {
-      if (!session) return [];
-      return getRoutineExercises(session.routineId);
-    },
-    [session]
-  );
+    const res = await getRoutineExercises(sess.routineId);
+    setRoutineExercises(res);
 
-  const allSets = useLiveQuery(
-    async () => {
-      if (!routineExercises?.length) return [];
-      return getSetsForRoutineExercises(routineExercises.map(re => re.id!));
-    },
-    [routineExercises]
-  );
-
-  const exercises = useLiveQuery(
-    async () => {
-      if (!routineExercises?.length) return {} as Record<number, Exercise>;
-      return getExercisesMap(routineExercises.map(re => re.exerciseId));
-    },
-    [routineExercises]
-  );
+    if (res.length > 0) {
+      const [sets, exMap] = await Promise.all([
+        getSetsForRoutineExercises(res.map(re => re.id!)),
+        getExercisesMap(res.map(re => re.exerciseId)),
+      ]);
+      setAllSets(sets);
+      setExercises(exMap);
+    }
+    setLoading(false);
+  }, [sessionId]);
 
   useEffect(() => {
+    loadData().catch(console.error);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
+  }, [loadData]);
 
   function getVal(set: ExerciseSet, field: 'reps' | 'weight'): number {
     return setEdits[set.id!]?.[field] ?? set[field];
   }
 
-  function updateEdit(setId: number, field: 'reps' | 'weight', value: string) {
+  function updateEdit(setId: string, field: 'reps' | 'weight', value: string) {
     const num = parseFloat(value) || 0;
     setSetEdits(prev => ({ ...prev, [setId]: { ...prev[setId], [field]: num } }));
   }
@@ -87,7 +88,8 @@ export default function ActiveWorkoutPage() {
   }
 
   async function handleAddSet(re: RoutineExercise) {
-    const existing = (allSets ?? [])
+    if (!user) return;
+    const existing = allSets
       .filter(s => s.routineExerciseId === re.id)
       .sort((a, b) => a.setNumber - b.setNumber);
     const last = existing[existing.length - 1];
@@ -96,36 +98,40 @@ export default function ActiveWorkoutPage() {
         re,
         existing,
         last ? getVal(last, 'reps') : 10,
-        last ? getVal(last, 'weight') : 0
+        last ? getVal(last, 'weight') : 0,
+        user.id
       );
+      const sets = await getSetsForRoutineExercises(routineExercises.map(r => r.id!));
+      setAllSets(sets);
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
   async function handleCompleteSet(re: RoutineExercise, set: ExerciseSet, exercise: Exercise) {
-    if (completedKeys.has(set.id!)) return;
+    if (!user || !sessionId || completedKeys.has(set.id!)) return;
     const reps = getVal(set, 'reps');
     const weight = getVal(set, 'weight');
     try {
-      await recordCompletedSet(sid, set, exercise, reps, weight);
+      await recordCompletedSet(sessionId, set, exercise, reps, weight, user.id);
       setCompletedKeys(prev => new Set([...prev, set.id!]));
       if (re.restSeconds > 0) startCountdown(re.restSeconds);
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
   async function handleFinish() {
+    if (!sessionId) return;
     if (timerRef.current) clearInterval(timerRef.current);
     try {
-      await finishWorkoutSession(sid);
+      await finishWorkoutSession(sessionId);
       navigate('/history');
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
@@ -135,7 +141,7 @@ export default function ActiveWorkoutPage() {
     return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`;
   }
 
-  if (!session || !routineExercises || !allSets || !exercises) return null;
+  if (loading || !session) return null;
 
   const totalSets = allSets.length;
   const doneSets = completedKeys.size;
@@ -169,7 +175,7 @@ export default function ActiveWorkoutPage() {
       <div className="flex-1 px-4 py-4 flex flex-col gap-4 pb-36">
         {routineExercises.map(re => {
           const exercise = exercises[re.exerciseId];
-          const sets = (allSets ?? [])
+          const sets = allSets
             .filter(s => s.routineExerciseId === re.id)
             .sort((a, b) => a.setNumber - b.setNumber);
           const doneCount = sets.filter(s => completedKeys.has(s.id!)).length;

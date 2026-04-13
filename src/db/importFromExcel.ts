@@ -1,3 +1,4 @@
+// TODO: migrar a Supabase
 import * as XLSX from "xlsx"
 import { db } from "./database"
 import { resolveExercise } from "./utils/exerciseMatcher"

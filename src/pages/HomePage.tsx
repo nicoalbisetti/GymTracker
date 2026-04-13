@@ -1,26 +1,39 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
 import type { Routine } from '@/types';
 import { Plus, Trash2, Copy, ChevronRight, Dumbbell, Play } from 'lucide-react';
 import {
   getRoutines,
   deleteRoutine,
   duplicateRoutine,
+  createRoutine,
 } from '@/services/routineService';
-import { createRoutine } from '@/services/routineService';
 import { createWorkoutSession } from '@/services/workoutService';
+import { useAuth } from '@/context/AuthContext';
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const routines = useLiveQuery(() => getRoutines());
+  const { user } = useAuth();
+  const [routines, setRoutines] = useState<Routine[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    getRoutines(user.id).then(setRoutines).catch(console.error);
+  }, [user]);
+
+  async function refresh() {
+    if (!user) return;
+    setRoutines(await getRoutines(user.id));
+  }
 
   async function handleCreateRoutine() {
+    if (!user) return;
     try {
-      const id = await createRoutine();
+      const id = await createRoutine(user.id);
       navigate(`/routine/${id}`);
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
@@ -29,29 +42,33 @@ export default function HomePage() {
     if (!confirm(`¿Eliminar "${routine.name}"?`)) return;
     try {
       await deleteRoutine(routine);
+      await refresh();
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
   async function handleDuplicateRoutine(routine: Routine, e: React.MouseEvent) {
     e.stopPropagation();
+    if (!user) return;
     try {
-      await duplicateRoutine(routine);
+      await duplicateRoutine(routine, user.id);
+      await refresh();
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
   async function startWorkout(routine: Routine) {
+    if (!user) return;
     try {
-      const sessionId = await createWorkoutSession(routine.id!, routine.name);
+      const sessionId = await createWorkoutSession(routine.id!, routine.name, user.id);
       navigate(`/workout/${sessionId}`);
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
@@ -67,7 +84,7 @@ export default function HomePage() {
         </button>
       </div>
 
-      {routines?.length === 0 && (
+      {routines.length === 0 && (
         <div className="text-center py-20">
           <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-700">
             <Dumbbell size={32} className="text-primary-400" strokeWidth={1.5} />
@@ -78,7 +95,7 @@ export default function HomePage() {
       )}
 
       <div className="flex flex-col gap-3">
-        {routines?.map((routine) => (
+        {routines.map((routine) => (
           <div
             key={routine.id}
             className="bg-slate-800 rounded-2xl border border-slate-700/50 overflow-hidden"

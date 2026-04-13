@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -10,7 +9,7 @@ import {
   useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Exercise, ExerciseSet, RoutineExercise } from '@/types';
+import type { Exercise, ExerciseSet, Routine, RoutineExercise } from '@/types';
 import ExercisePicker from '@/components/ExercisePicker';
 import { ArrowLeft, GripVertical, X, Trash2, Plus, Timer, Pencil, Dumbbell } from 'lucide-react';
 import {
@@ -27,6 +26,7 @@ import {
   renameRoutine,
 } from '@/services/routineService';
 import { getExercisesMap } from '@/services/exerciseService';
+import { useAuth } from '@/context/AuthContext';
 
 // ─── Sortable exercise card ───────────────────────────────────────────────────
 
@@ -34,11 +34,11 @@ interface CardProps {
   re: RoutineExercise;
   exercise: Exercise | undefined;
   sets: ExerciseSet[];
-  onAddSet: (reId: number) => void;
+  onAddSet: (reId: string) => void;
   onUpdateSet: (set: ExerciseSet, field: 'reps' | 'weight', value: string) => void;
-  onDeleteSet: (setId: number, reId: number) => void;
-  onRemove: (reId: number) => void;
-  onUpdateRest: (reId: number, seconds: number) => void;
+  onDeleteSet: (setId: string, reId: string) => void;
+  onRemove: (reId: string) => void;
+  onUpdateRest: (reId: string, seconds: number) => void;
 }
 
 function SortableExerciseCard({ re, exercise, sets, onAddSet, onUpdateSet, onDeleteSet, onRemove, onUpdateRest }: CardProps) {
@@ -143,74 +143,88 @@ function SortableExerciseCard({ re, exercise, sets, onAddSet, onUpdateSet, onDel
 
 export default function RoutineDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const routineId = Number(id);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [showPicker, setShowPicker] = useState(false);
   const [editingName, setEditingName] = useState(false);
+
+  const [routine, setRoutine] = useState<Routine | undefined>(undefined);
+  const [routineExercises, setRoutineExercises] = useState<RoutineExercise[]>([]);
+  const [allSets, setAllSets] = useState<ExerciseSet[]>([]);
+  const [exercises, setExercises] = useState<Record<number, Exercise>>({});
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   );
 
-  const routine = useLiveQuery(() => getRoutineById(routineId), [routineId]);
+  const loadData = useCallback(async () => {
+    if (!id) return;
+    const [r, res] = await Promise.all([
+      getRoutineById(id),
+      getRoutineExercises(id),
+    ]);
+    setRoutine(r);
+    setRoutineExercises(res);
+    if (res.length > 0) {
+      const [sets, exMap] = await Promise.all([
+        getSetsForRoutineExercises(res.map(re => re.id!)),
+        getExercisesMap(res.map(re => re.exerciseId)),
+      ]);
+      setAllSets(sets);
+      setExercises(exMap);
+    } else {
+      setAllSets([]);
+      setExercises({});
+    }
+  }, [id]);
 
-  const routineExercises = useLiveQuery(
-    () => getRoutineExercises(routineId),
-    [routineId]
-  );
-
-  const allSets = useLiveQuery(
-    async () => {
-      if (!routineExercises?.length) return [];
-      return getSetsForRoutineExercises(routineExercises.map(re => re.id!));
-    },
-    [routineExercises]
-  );
-
-  const exercises = useLiveQuery(
-    async () => {
-      if (!routineExercises?.length) return {} as Record<number, Exercise>;
-      return getExercisesMap(routineExercises.map(re => re.exerciseId));
-    },
-    [routineExercises]
-  );
+  useEffect(() => {
+    loadData().catch(console.error);
+  }, [loadData]);
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over || active.id === over.id || !routineExercises) return;
+    if (!over || active.id === over.id) return;
     const oldIndex = routineExercises.findIndex(re => re.id === active.id);
     const newIndex = routineExercises.findIndex(re => re.id === over.id);
     const reordered = arrayMove(routineExercises, oldIndex, newIndex);
+    setRoutineExercises(reordered);
     try {
       await reorderRoutineExercises(reordered);
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
+      await loadData();
     }
   }
 
-  async function handleAddExercises(exercises: Exercise[]) {
-    const baseOrder = routineExercises?.length ?? 0;
+  async function handleAddExercises(selected: Exercise[]) {
+    if (!user || !id) return;
+    const baseOrder = routineExercises.length;
     try {
-      await addExercisesToRoutine(routineId, exercises, baseOrder);
+      await addExercisesToRoutine(id, selected, baseOrder, user.id);
       setShowPicker(false);
+      await loadData();
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
-  async function handleAddSet(routineExerciseId: number) {
-    const existing = (allSets ?? [])
+  async function handleAddSet(routineExerciseId: string) {
+    if (!user) return;
+    const existing = allSets
       .filter(s => s.routineExerciseId === routineExerciseId)
       .sort((a, b) => a.setNumber - b.setNumber);
     const last = existing[existing.length - 1];
     try {
-      await addSet(routineExerciseId, existing.length + 1, last?.reps ?? 10, last?.weight ?? 0);
+      await addSet(routineExerciseId, existing.length + 1, last?.reps ?? 10, last?.weight ?? 0, user.id);
+      await loadData();
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
@@ -219,45 +233,49 @@ export default function RoutineDetailPage() {
       await updateSet(set.id!, field, parseFloat(value) || 0);
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
-  async function handleDeleteSet(setId: number, routineExerciseId: number) {
+  async function handleDeleteSet(setId: string, routineExerciseId: string) {
     try {
-      await deleteSet(setId, routineExerciseId, allSets ?? []);
+      await deleteSet(setId, routineExerciseId, allSets);
+      await loadData();
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
-  async function handleRemoveExercise(routineExerciseId: number) {
+  async function handleRemoveExercise(routineExerciseId: string) {
     try {
       await removeExerciseFromRoutine(routineExerciseId);
+      await loadData();
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
-  async function handleUpdateRest(routineExerciseId: number, restSeconds: number) {
+  async function handleUpdateRest(routineExerciseId: string, restSeconds: number) {
     await updateRestSeconds(routineExerciseId, restSeconds);
   }
 
   async function handleRenameRoutine(newName: string) {
+    if (!id) return;
     try {
-      await renameRoutine(routineId, newName);
+      await renameRoutine(id, newName);
       setEditingName(false);
+      await loadData();
     } catch (err) {
       console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      alert('Error al guardar. Verificá tu conexión.');
     }
   }
 
   if (!routine) return null;
 
-  const excludedIds = routineExercises?.map(re => re.exerciseId) ?? [];
+  const excludedIds = routineExercises.map(re => re.exerciseId);
 
   return (
     <div className="flex flex-col min-h-full">
@@ -286,7 +304,7 @@ export default function RoutineDetailPage() {
       </div>
 
       <div className="flex-1 px-4 py-4 flex flex-col gap-4">
-        {(!routineExercises || routineExercises.length === 0) && (
+        {routineExercises.length === 0 && (
           <div className="text-center py-12">
             <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-slate-700">
               <Dumbbell size={28} className="text-primary-400" strokeWidth={1.5} />
@@ -298,19 +316,19 @@ export default function RoutineDetailPage() {
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext
-            items={(routineExercises ?? []).map(re => re.id!)}
+            items={routineExercises.map(re => re.id!)}
             strategy={verticalListSortingStrategy}
           >
             <div className="flex flex-col gap-4">
-              {(routineExercises ?? []).map(re => {
-                const sets = (allSets ?? [])
+              {routineExercises.map(re => {
+                const sets = allSets
                   .filter(s => s.routineExerciseId === re.id)
                   .sort((a, b) => a.setNumber - b.setNumber);
                 return (
                   <SortableExerciseCard
                     key={re.id}
                     re={re}
-                    exercise={exercises?.[re.exerciseId]}
+                    exercise={exercises[re.exerciseId]}
                     sets={sets}
                     onAddSet={handleAddSet}
                     onUpdateSet={handleUpdateSet}

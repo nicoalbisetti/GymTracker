@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useEffect, useMemo, useState } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 import { getAllSetRecords } from '@/services/progressService';
+import { useAuth } from '@/context/AuthContext';
+import type { WorkoutSetRecord } from '@/types';
 
 const COLORS = [
   '#8b5cf6', '#06b6d4', '#f59e0b', '#10b981',
@@ -12,18 +13,27 @@ const COLORS = [
 ];
 
 export default function ProgressPage() {
-  const records = useLiveQuery(() => getAllSetRecords());
+  const { user } = useAuth();
+  const [records, setRecords] = useState<WorkoutSetRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!user) return;
+    getAllSetRecords(user.id)
+      .then(setRecords)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [user]);
+
   const muscleGroups = useMemo(() => {
-    if (!records) return [];
     return [...new Set(records.map((r) => r.muscleGroup))].sort();
   }, [records]);
 
   const activeMuscle = selectedMuscle ?? muscleGroups[0] ?? null;
 
   const chartData = useMemo(() => {
-    if (!records || !activeMuscle) return { exercises: [], points: [], useReps: false };
+    if (!activeMuscle) return { exercises: [], points: [], useReps: false };
 
     const filtered = records.filter((r) => r.muscleGroup === activeMuscle);
     const useReps = activeMuscle === 'Core';
@@ -59,7 +69,7 @@ export default function ProgressPage() {
     return { exercises, points, useReps };
   }, [records, activeMuscle]);
 
-  if (!records) return null;
+  if (loading) return null;
 
   return (
     <div className="flex flex-col gap-4 p-4">

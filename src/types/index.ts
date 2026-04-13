@@ -1,43 +1,43 @@
 export interface Exercise {
-  id?: number;
+  id?: number;          // serial integer — sin cambios
   name: string;
-  muscleGroup: string;
+  muscleGroup: string;  // camelCase en la app, snake_case en Supabase
 }
 
 export interface Routine {
-  id?: number;
+  id?: string;          // uuid
   name: string;
   createdAt: string;
 }
 
 export interface RoutineExercise {
-  id?: number;
-  routineId: number;
-  exerciseId: number;
+  id?: string;          // uuid
+  routineId: string;    // uuid
+  exerciseId: number;   // integer (FK a exercises)
   orderIndex: number;
   restSeconds: number;
 }
 
 export interface ExerciseSet {
-  id?: number;
-  routineExerciseId: number;
+  id?: string;          // uuid
+  routineExerciseId: string;  // uuid
   setNumber: number;
   reps: number;
   weight: number;
 }
 
 export interface WorkoutSession {
-  id?: number;
-  routineId: number;
+  id?: string;          // uuid
+  routineId: string;    // uuid
   routineName: string;
   startedAt: string;
   finishedAt?: string;
 }
 
 export interface WorkoutSetRecord {
-  id?: number;
-  sessionId: number;
-  exerciseId: number;
+  id?: string;          // uuid
+  sessionId: string;    // uuid
+  exerciseId: number;   // integer
   exerciseName: string;
   muscleGroup: string;
   setNumber: number;

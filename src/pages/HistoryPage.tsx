@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getAllSessions } from '@/services/historyService';
 import MonthCalendar from '@/components/MonthCalendar';
+import { useAuth } from '@/context/AuthContext';
+import type { WorkoutSession } from '@/types';
 
 const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -23,19 +24,23 @@ function formatDuration(startedAt: string, finishedAt?: string): string | null {
 
 export default function HistoryPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const now = new Date();
   const [viewYear, setViewYear] = useState(() => now.getFullYear());
   const [viewMonth, setViewMonth] = useState(() => now.getMonth());
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
 
   const today = { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
   const isCurrentMonth = viewYear === today.year && viewMonth === today.month;
 
-  const sessions = useLiveQuery(() => getAllSessions());
+  useEffect(() => {
+    if (!user) return;
+    getAllSessions(user.id).then(setSessions).catch(console.error);
+  }, [user]);
 
   const sessionsInMonth = useMemo(() => {
-    if (!sessions) return [];
     return sessions.filter((s) => {
       const d = new Date(s.startedAt);
       return d.getFullYear() === viewYear && d.getMonth() === viewMonth;
