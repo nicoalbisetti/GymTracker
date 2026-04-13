@@ -1,5 +1,9 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { AuthProvider } from '@/context/AuthContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import BottomNav from '@/components/BottomNav';
+import LoginPage from '@/pages/LoginPage';
 import HomePage from '@/pages/HomePage';
 import ExercisesPage from '@/pages/ExercisesPage';
 import RoutineDetailPage from '@/pages/RoutineDetailPage';
@@ -7,48 +11,54 @@ import ActiveWorkoutPage from '@/pages/ActiveWorkoutPage';
 import HistoryPage from '@/pages/HistoryPage';
 import SessionDetailPage from '@/pages/SessionDetailPage';
 import ProgressPage from '@/pages/ProgressPage';
-import { useEffect } from "react";
-//import { seedExercises } from "@/db/seed";
-//import { seedFullRoutine } from "@/db/seedFullRoutine";
-import { SettingsPage } from "@/pages/SettingsPage";
-import { db } from "@/db/database";
+import { SettingsPage } from '@/pages/SettingsPage';
+import { db } from '@/db/database';
 import InstallPrompt from '@/components/InstallPrompt';
 
 ;(window as any).db = db
 
-export default function App() {
+function AppInner() {
   const location = useLocation();
-  const fullscreen = location.pathname.startsWith('/routine/') || location.pathname.startsWith('/workout/');
+  const fullscreen =
+    location.pathname.startsWith('/routine/') ||
+    location.pathname.startsWith('/workout/');
 
   useEffect(() => {
     async function init() {
-      console.log("🚀 RUNNING SEED")
-
-      // await seedExercises()
-      // await seedFullRoutine()
-
-      console.log("✅ SEED DONE")
+      console.log('🚀 RUNNING SEED');
+      console.log('✅ SEED DONE');
     }
-
-    init().catch(console.error)
-  }, [])
+    init().catch(console.error);
+  }, []);
 
   return (
     <div className="flex flex-col min-h-full max-w-lg mx-auto">
       <main className={`flex-1 overflow-y-auto ${fullscreen ? '' : 'pb-16'}`}>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/exercises" element={<ExercisesPage />} />
-          <Route path="/routine/:id" element={<RoutineDetailPage />} />
-          <Route path="/workout/:sessionId" element={<ActiveWorkoutPage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/history/:sessionId" element={<SessionDetailPage />} />
-          <Route path="/progress" element={<ProgressPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          {/* Ruta pública */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Rutas protegidas */}
+          <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+          <Route path="/exercises" element={<ProtectedRoute><ExercisesPage /></ProtectedRoute>} />
+          <Route path="/routine/:id" element={<ProtectedRoute><RoutineDetailPage /></ProtectedRoute>} />
+          <Route path="/workout/:sessionId" element={<ProtectedRoute><ActiveWorkoutPage /></ProtectedRoute>} />
+          <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+          <Route path="/history/:sessionId" element={<ProtectedRoute><SessionDetailPage /></ProtectedRoute>} />
+          <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         </Routes>
       </main>
       <BottomNav />
       <InstallPrompt />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
   );
 }

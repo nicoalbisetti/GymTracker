@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Dumbbell, ListChecks, CalendarDays, TrendingUp, Settings } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const tabs = [
   { to: '/',          label: 'Rutinas',    Icon: Dumbbell },
@@ -11,7 +12,15 @@ const tabs = [
 
 export default function BottomNav() {
   const location = useLocation();
-  if (location.pathname.startsWith('/routine/') || location.pathname.startsWith('/workout/')) return null;
+  const { signOut } = useAuth();
+
+  if (
+    location.pathname.startsWith('/routine/') ||
+    location.pathname.startsWith('/workout/') ||
+    location.pathname === '/login'
+  ) return null;
+
+  void signOut; // disponible para uso futuro en SettingsPage
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 flex justify-around items-center h-16 z-40 max-w-lg mx-auto safe-area-bottom">
