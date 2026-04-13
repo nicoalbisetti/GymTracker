@@ -27,6 +27,7 @@ const EXERCISES = [
   { id: 18, name: 'Seated Cable Row', muscleGroup: 'Espalda' },
   { id: 19, name: 'Cable Pullover', muscleGroup: 'Espalda' },
   { id: 20, name: 'Hyperextensions', muscleGroup: 'Espalda' },
+  { id: 28, name: 'Face Pull', muscleGroup: 'Espalda' },
 
   // Hombros
   { id: 21, name: 'Smith Machine Shoulder Press', muscleGroup: 'Hombros' },
@@ -36,7 +37,6 @@ const EXERCISES = [
   { id: 25, name: 'Cable Lateral Raises', muscleGroup: 'Hombros' },
   { id: 26, name: 'Front Raises', muscleGroup: 'Hombros' },
   { id: 27, name: 'Rear Delt Flyes', muscleGroup: 'Hombros' },
-  { id: 28, name: 'Face Pull', muscleGroup: 'Espalda' },
   { id: 29, name: 'Upright Row', muscleGroup: 'Hombros' },
   { id: 30, name: 'Dumbbell Shrugs', muscleGroup: 'Hombros' },
 
