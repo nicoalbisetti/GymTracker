@@ -70,7 +70,38 @@ class GymTrackerDB extends Dexie {
         if (r.exerciseName === 'Face Pull') r.muscleGroup = 'Espalda';
       });
     });
+    this.version(6).stores({
+      exercises:         '++id, name, muscleGroup',
+      routines:          '++id, createdAt',
+      routineExercises:  '++id, routineId, exerciseId, orderIndex, [routineId+orderIndex]',
+      sets:              '++id, routineExerciseId',
+      workoutSessions:   '++id, routineId, startedAt',
+      workoutSetRecords: '++id, sessionId, exerciseId',
+    });
+    this.version(7).stores({
+      exercises:         '++id, name, muscleGroup',
+      routines:          '++id, createdAt',
+      routineExercises:  '++id, routineId, exerciseId, orderIndex, [routineId+orderIndex]',
+      sets:              '++id, routineExerciseId',
+      workoutSessions:   '++id, routineId, startedAt',
+      workoutSetRecords: '++id, sessionId, exerciseId',
+    }).upgrade(async (tx) => {
+      await tx.table('exercises').where('name').equals('Face Pull').modify({ muscleGroup: 'Espalda' });
+      await tx.table('workoutSetRecords').toCollection().modify((r) => {
+        if (r.exerciseName === 'Face Pull') r.muscleGroup = 'Espalda';
+      });
+    });
   }
 }
 
 export const db = new GymTrackerDB();
+
+export async function cleanupOrphanedSessions(): Promise<void> {
+  const orphaned = await db.workoutSessions
+    .filter((s) => s.finishedAt === undefined || s.finishedAt === null)
+    .toArray();
+  for (const session of orphaned) {
+    await db.workoutSetRecords.where('sessionId').equals(session.id!).delete();
+    await db.workoutSessions.delete(session.id!);
+  }
+}
