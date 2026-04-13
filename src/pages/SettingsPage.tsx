@@ -1,4 +1,5 @@
 import { ImportWorkout } from "@/components/ImportWorkout"
+import { ExportImportDB } from "@/components/ExportImportDB"
 import { Settings } from "lucide-react"
 
 export function SettingsPage() {
@@ -13,6 +14,7 @@ export function SettingsPage() {
 
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-gray-200 border-b border-white/10 pb-2">Gestión de Datos</h2>
+        <ExportImportDB />
         <ImportWorkout />
       </section>
     </div>
