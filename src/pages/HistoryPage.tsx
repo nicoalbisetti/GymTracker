@@ -1,98 +1,176 @@
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { db } from '@/db/database';
-import { Trash2, ChevronRight, CalendarDays, Clock, Timer } from 'lucide-react';
+import MonthCalendar from '@/components/MonthCalendar';
+
+const MONTH_NAMES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+function formatDuration(startedAt: string, finishedAt?: string): string | null {
+  if (!finishedAt) return null;
+  const mins = Math.round(
+    (new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 60000
+  );
+  if (mins < 60) return `${mins} min`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}min`;
+}
 
 export default function HistoryPage() {
   const navigate = useNavigate();
+
+  const now = new Date();
+  const [viewYear, setViewYear] = useState(() => now.getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => now.getMonth());
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  const today = { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
+  const isCurrentMonth = viewYear === today.year && viewMonth === today.month;
+
   const sessions = useLiveQuery(() =>
     db.workoutSessions.orderBy('startedAt').reverse().toArray()
   );
 
-  async function deleteSession(id: number, e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!confirm('¿Eliminar esta sesión?')) return;
-    try {
-      await db.transaction('rw', [db.workoutSessions, db.workoutSetRecords], async () => {
-        await db.workoutSetRecords.where('sessionId').equals(id).delete();
-        await db.workoutSessions.delete(id);
-      });
-    } catch (err) {
-      console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+  const sessionsInMonth = useMemo(() => {
+    if (!sessions) return [];
+    return sessions.filter((s) => {
+      const d = new Date(s.startedAt);
+      return d.getFullYear() === viewYear && d.getMonth() === viewMonth;
+    });
+  }, [sessions, viewYear, viewMonth]);
+
+  const trainedDays = useMemo(() => {
+    const days = new Set<number>();
+    for (const s of sessionsInMonth) {
+      if (s.finishedAt) days.add(new Date(s.startedAt).getDate());
     }
+    return days;
+  }, [sessionsInMonth]);
+
+  const sessionsOnSelectedDay = useMemo(() => {
+    if (selectedDay === null) return [];
+    return sessionsInMonth
+      .filter((s) => new Date(s.startedAt).getDate() === selectedDay)
+      .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  }, [sessionsInMonth, selectedDay]);
+
+  function goToPrevMonth() {
+    setSelectedDay(null);
+    if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); }
+    else setViewMonth((m) => m - 1);
   }
 
-  function formatDuration(startedAt: string, finishedAt?: string) {
-    if (!finishedAt) return null;
-    const mins = Math.round((new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 60000);
-    if (mins < 60) return `${mins} min`;
-    return `${Math.floor(mins / 60)}h ${mins % 60}min`;
+  function goToNextMonth() {
+    if (isCurrentMonth) return;
+    setSelectedDay(null);
+    if (viewMonth === 11) { setViewYear((y) => y + 1); setViewMonth(0); }
+    else setViewMonth((m) => m + 1);
   }
+
+  function handleSelectDay(day: number) {
+    setSelectedDay((prev) => (prev === day ? null : day));
+  }
+
+  const selectedDayLabel = selectedDay !== null
+    ? (() => {
+        const d = new Date(viewYear, viewMonth, selectedDay);
+        const rawDay = d.getDay();
+        const dayName = DAY_NAMES[rawDay === 0 ? 6 : rawDay - 1];
+        return `${dayName} ${selectedDay}`;
+      })()
+    : null;
 
   return (
     <div className="flex flex-col gap-4 p-4">
       <h1 className="text-2xl font-bold text-white tracking-tight pt-2">Historial</h1>
 
-      {sessions?.length === 0 && (
-        <div className="text-center py-20">
-          <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-700">
-            <CalendarDays size={32} className="text-primary-400" strokeWidth={1.5} />
-          </div>
-          <p className="font-semibold text-slate-300">Sin sesiones todavía</p>
-          <p className="text-sm mt-1 text-slate-500">Ejecutá una rutina para verla acá</p>
-        </div>
-      )}
+      {/* Navegación de mes */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={goToPrevMonth}
+          className="p-2 rounded-xl text-slate-400 active:bg-slate-800"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <span className="text-base font-semibold text-white">
+          {MONTH_NAMES[viewMonth]} {viewYear}
+        </span>
+        <button
+          onClick={goToNextMonth}
+          className={`p-2 rounded-xl transition-colors ${
+            isCurrentMonth
+              ? 'text-slate-700 cursor-default'
+              : 'text-slate-400 active:bg-slate-800'
+          }`}
+          disabled={isCurrentMonth}
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
 
-      <div className="flex flex-col gap-3">
-        {sessions?.map((session) => {
-          const duration = formatDuration(session.startedAt, session.finishedAt);
-          const date = new Date(session.startedAt);
-          return (
-            <div
-              key={session.id}
-              className="bg-slate-800 rounded-2xl border border-slate-700/50 overflow-hidden"
-            >
+      {/* Calendario */}
+      <MonthCalendar
+        year={viewYear}
+        month={viewMonth}
+        trainedDays={trainedDays}
+        selectedDay={selectedDay}
+        onSelectDay={handleSelectDay}
+        today={today}
+      />
+
+      {/* Sesiones del día seleccionado */}
+      {selectedDay !== null && (
+        <div className="flex flex-col gap-2 mt-2">
+          <p className="text-sm font-semibold text-slate-400 px-1">
+            {selectedDayLabel}
+          </p>
+          {sessionsOnSelectedDay.length === 0 ? (
+            <p className="text-sm text-slate-500 px-1">
+              Sin sesiones finalizadas este día
+            </p>
+          ) : (
+            sessionsOnSelectedDay.map((session) => (
               <button
+                key={session.id}
                 onClick={() => navigate(`/history/${session.id}`)}
-                className="w-full p-4 text-left active:bg-slate-700/50 flex items-center gap-3"
+                className="w-full bg-slate-800 border border-slate-700/50 rounded-2xl p-4 text-left active:bg-slate-700/50"
               >
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white">{session.routineName}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Clock size={12} className="text-slate-500 flex-shrink-0" />
-                    <p className="text-sm text-slate-400 truncate">
-                      {date.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                      {' · '}{date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                  {duration && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-primary-500/15 text-primary-400 font-medium rounded-full px-2.5 py-1">
-                      <Timer size={11} />
-                      {duration}
+                <p className="font-semibold text-white">{session.routineName}</p>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-xs text-slate-400">
+                    {new Date(session.startedAt).toLocaleTimeString('es-AR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                  {formatDuration(session.startedAt, session.finishedAt) && (
+                    <span className="text-xs text-slate-500">
+                      · {formatDuration(session.startedAt, session.finishedAt)}
                     </span>
                   )}
                   {!session.finishedAt && (
-                    <span className="text-xs bg-amber-500/15 text-amber-400 font-medium rounded-full px-2.5 py-1">Incompleta</span>
+                    <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 rounded-full">
+                      Incompleta
+                    </span>
                   )}
-                  <ChevronRight size={16} className="text-slate-600" />
                 </div>
               </button>
-              <div className="border-t border-slate-700/50 px-4 py-2 flex justify-end">
-                <button
-                  onClick={(e) => deleteSession(session.id!, e)}
-                  className="text-slate-600 active:text-red-400 p-2 rounded-xl"
-                  title="Eliminar sesión"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Estado vacío del mes */}
+      {sessionsInMonth.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-sm text-slate-500">Sin entrenamientos este mes</p>
+        </div>
+      )}
     </div>
   );
 }
