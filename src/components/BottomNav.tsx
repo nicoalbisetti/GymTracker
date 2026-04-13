@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Dumbbell, ListChecks, CalendarDays, TrendingUp } from 'lucide-react';
+import { Dumbbell, ListChecks, CalendarDays, TrendingUp, Settings } from 'lucide-react';
 
 const tabs = [
   { to: '/',          label: 'Rutinas',    Icon: Dumbbell },
   { to: '/exercises', label: 'Ejercicios', Icon: ListChecks },
   { to: '/history',   label: 'Historial',  Icon: CalendarDays },
   { to: '/progress',  label: 'Progresión', Icon: TrendingUp },
+  { to: '/settings',  label: 'Config',     Icon: Settings },
 ];
 
 export default function BottomNav() {
