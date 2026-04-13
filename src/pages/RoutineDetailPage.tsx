@@ -10,10 +10,23 @@ import {
   useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { db } from '@/db/database';
 import type { Exercise, ExerciseSet, RoutineExercise } from '@/types';
 import ExercisePicker from '@/components/ExercisePicker';
 import { ArrowLeft, GripVertical, X, Trash2, Plus, Timer, Pencil, Dumbbell } from 'lucide-react';
+import {
+  getRoutineById,
+  getRoutineExercises,
+  getSetsForRoutineExercises,
+  addExercisesToRoutine,
+  removeExerciseFromRoutine,
+  reorderRoutineExercises,
+  addSet,
+  updateSet,
+  deleteSet,
+  updateRestSeconds,
+  renameRoutine,
+} from '@/services/routineService';
+import { getExercisesMap } from '@/services/exerciseService';
 
 // ─── Sortable exercise card ───────────────────────────────────────────────────
 
@@ -140,17 +153,17 @@ export default function RoutineDetailPage() {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   );
 
-  const routine = useLiveQuery(() => db.routines.get(routineId), [routineId]);
+  const routine = useLiveQuery(() => getRoutineById(routineId), [routineId]);
 
   const routineExercises = useLiveQuery(
-    () => db.routineExercises.where('routineId').equals(routineId).sortBy('orderIndex'),
+    () => getRoutineExercises(routineId),
     [routineId]
   );
 
   const allSets = useLiveQuery(
     async () => {
       if (!routineExercises?.length) return [];
-      return db.sets.where('routineExerciseId').anyOf(routineExercises.map(re => re.id!)).toArray();
+      return getSetsForRoutineExercises(routineExercises.map(re => re.id!));
     },
     [routineExercises]
   );
@@ -158,8 +171,7 @@ export default function RoutineDetailPage() {
   const exercises = useLiveQuery(
     async () => {
       if (!routineExercises?.length) return {} as Record<number, Exercise>;
-      const exs = await db.exercises.where('id').anyOf(routineExercises.map(re => re.exerciseId)).toArray();
-      return Object.fromEntries(exs.map(e => [e.id!, e])) as Record<number, Exercise>;
+      return getExercisesMap(routineExercises.map(re => re.exerciseId));
     },
     [routineExercises]
   );
@@ -171,7 +183,7 @@ export default function RoutineDetailPage() {
     const newIndex = routineExercises.findIndex(re => re.id === over.id);
     const reordered = arrayMove(routineExercises, oldIndex, newIndex);
     try {
-      await Promise.all(reordered.map((re, i) => db.routineExercises.update(re.id!, { orderIndex: i })));
+      await reorderRoutineExercises(reordered);
     } catch (err) {
       console.error(err);
       alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
@@ -181,14 +193,7 @@ export default function RoutineDetailPage() {
   async function handleAddExercises(exercises: Exercise[]) {
     const baseOrder = routineExercises?.length ?? 0;
     try {
-      await db.transaction('rw', [db.routineExercises, db.sets], async () => {
-        for (let i = 0; i < exercises.length; i++) {
-          const routineExerciseId = await db.routineExercises.add({
-            routineId, exerciseId: exercises[i].id!, orderIndex: baseOrder + i, restSeconds: 60,
-          });
-          await db.sets.add({ routineExerciseId: routineExerciseId as number, setNumber: 1, reps: 10, weight: 0 });
-        }
-      });
+      await addExercisesToRoutine(routineId, exercises, baseOrder);
       setShowPicker(false);
     } catch (err) {
       console.error(err);
@@ -202,12 +207,7 @@ export default function RoutineDetailPage() {
       .sort((a, b) => a.setNumber - b.setNumber);
     const last = existing[existing.length - 1];
     try {
-      await db.sets.add({
-        routineExerciseId,
-        setNumber: existing.length + 1,
-        reps: last?.reps ?? 10,
-        weight: last?.weight ?? 0,
-      });
+      await addSet(routineExerciseId, existing.length + 1, last?.reps ?? 10, last?.weight ?? 0);
     } catch (err) {
       console.error(err);
       alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
@@ -216,7 +216,7 @@ export default function RoutineDetailPage() {
 
   async function handleUpdateSet(set: ExerciseSet, field: 'reps' | 'weight', value: string) {
     try {
-      await db.sets.update(set.id!, { [field]: parseFloat(value) || 0 });
+      await updateSet(set.id!, field, parseFloat(value) || 0);
     } catch (err) {
       console.error(err);
       alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
@@ -225,15 +225,7 @@ export default function RoutineDetailPage() {
 
   async function handleDeleteSet(setId: number, routineExerciseId: number) {
     try {
-      await db.transaction('rw', [db.sets], async () => {
-        await db.sets.delete(setId);
-        const remaining = (allSets ?? [])
-          .filter(s => s.routineExerciseId === routineExerciseId && s.id !== setId)
-          .sort((a, b) => a.setNumber - b.setNumber);
-        for (let i = 0; i < remaining.length; i++) {
-          await db.sets.update(remaining[i].id!, { setNumber: i + 1 });
-        }
-      });
+      await deleteSet(setId, routineExerciseId, allSets ?? []);
     } catch (err) {
       console.error(err);
       alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
@@ -242,10 +234,7 @@ export default function RoutineDetailPage() {
 
   async function handleRemoveExercise(routineExerciseId: number) {
     try {
-      await db.transaction('rw', [db.routineExercises, db.sets], async () => {
-        await db.sets.where('routineExerciseId').equals(routineExerciseId).delete();
-        await db.routineExercises.delete(routineExerciseId);
-      });
+      await removeExerciseFromRoutine(routineExerciseId);
     } catch (err) {
       console.error(err);
       alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
@@ -253,12 +242,12 @@ export default function RoutineDetailPage() {
   }
 
   async function handleUpdateRest(routineExerciseId: number, restSeconds: number) {
-    await db.routineExercises.update(routineExerciseId, { restSeconds });
+    await updateRestSeconds(routineExerciseId, restSeconds);
   }
 
   async function handleRenameRoutine(newName: string) {
     try {
-      if (newName.trim()) await db.routines.update(routineId, { name: newName.trim() });
+      await renameRoutine(routineId, newName);
       setEditingName(false);
     } catch (err) {
       console.error(err);

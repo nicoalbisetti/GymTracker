@@ -1,18 +1,15 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/db/database';
 import { ArrowLeft, Calendar, Clock, Timer, ClipboardList } from 'lucide-react';
+import { getSessionById, getSessionRecords } from '@/services/historyService';
 
 export default function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const sid = Number(sessionId);
   const navigate = useNavigate();
 
-  const session = useLiveQuery(() => db.workoutSessions.get(sid), [sid]);
-  const records = useLiveQuery(
-    () => db.workoutSetRecords.where('sessionId').equals(sid).sortBy('completedAt'),
-    [sid]
-  );
+  const session = useLiveQuery(() => getSessionById(sid), [sid]);
+  const records = useLiveQuery(() => getSessionRecords(sid), [sid]);
 
   if (!session || !records) return null;
 

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/db/database';
 import { playBeep } from '@/utils/audio';
 import type { Exercise, ExerciseSet, RoutineExercise } from '@/types';
 import { Check, Plus, SkipForward } from 'lucide-react';
+import { getWorkoutSession, finishWorkoutSession, recordCompletedSet, addSetDuringWorkout } from '@/services/workoutService';
+import { getRoutineExercises, getSetsForRoutineExercises } from '@/services/routineService';
+import { getExercisesMap } from '@/services/exerciseService';
 
 type SetEdits = Record<number, { reps: number; weight: number }>;
 
@@ -20,12 +22,12 @@ export default function ActiveWorkoutPage() {
   const endTimeRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const session = useLiveQuery(() => db.workoutSessions.get(sid), [sid]);
+  const session = useLiveQuery(() => getWorkoutSession(sid), [sid]);
 
   const routineExercises = useLiveQuery(
     async () => {
       if (!session) return [];
-      return db.routineExercises.where('routineId').equals(session.routineId).sortBy('orderIndex');
+      return getRoutineExercises(session.routineId);
     },
     [session]
   );
@@ -33,7 +35,7 @@ export default function ActiveWorkoutPage() {
   const allSets = useLiveQuery(
     async () => {
       if (!routineExercises?.length) return [];
-      return db.sets.where('routineExerciseId').anyOf(routineExercises.map(re => re.id!)).toArray();
+      return getSetsForRoutineExercises(routineExercises.map(re => re.id!));
     },
     [routineExercises]
   );
@@ -41,8 +43,7 @@ export default function ActiveWorkoutPage() {
   const exercises = useLiveQuery(
     async () => {
       if (!routineExercises?.length) return {} as Record<number, Exercise>;
-      const exs = await db.exercises.where('id').anyOf(routineExercises.map(re => re.exerciseId)).toArray();
-      return Object.fromEntries(exs.map(e => [e.id!, e])) as Record<number, Exercise>;
+      return getExercisesMap(routineExercises.map(re => re.exerciseId));
     },
     [routineExercises]
   );
@@ -91,12 +92,12 @@ export default function ActiveWorkoutPage() {
       .sort((a, b) => a.setNumber - b.setNumber);
     const last = existing[existing.length - 1];
     try {
-      await db.sets.add({
-        routineExerciseId: re.id!,
-        setNumber: existing.length + 1,
-        reps: last ? getVal(last, 'reps') : 10,
-        weight: last ? getVal(last, 'weight') : 0,
-      });
+      await addSetDuringWorkout(
+        re,
+        existing,
+        last ? getVal(last, 'reps') : 10,
+        last ? getVal(last, 'weight') : 0
+      );
     } catch (err) {
       console.error(err);
       alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
@@ -108,20 +109,8 @@ export default function ActiveWorkoutPage() {
     const reps = getVal(set, 'reps');
     const weight = getVal(set, 'weight');
     try {
-      await db.sets.update(set.id!, { reps, weight });
+      await recordCompletedSet(sid, set, exercise, reps, weight);
       setCompletedKeys(prev => new Set([...prev, set.id!]));
-
-      await db.workoutSetRecords.add({
-        sessionId: sid,
-        exerciseId: exercise.id!,
-        exerciseName: exercise.name,
-        muscleGroup: exercise.muscleGroup,
-        setNumber: set.setNumber,
-        reps,
-        weight,
-        completedAt: new Date().toISOString(),
-      });
-
       if (re.restSeconds > 0) startCountdown(re.restSeconds);
     } catch (err) {
       console.error(err);
@@ -132,7 +121,7 @@ export default function ActiveWorkoutPage() {
   async function handleFinish() {
     if (timerRef.current) clearInterval(timerRef.current);
     try {
-      await db.workoutSessions.update(sid, { finishedAt: new Date().toISOString() });
+      await finishWorkoutSession(sid);
       navigate('/history');
     } catch (err) {
       console.error(err);

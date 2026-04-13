@@ -1,3 +1,5 @@
+// Acceso directo a db permitido: operación de backup/restore requiere acceso
+// completo al schema. No migrar a servicios individuales.
 import { useState, useRef } from 'react';
 import { Download, Upload, Database, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { db } from '@/db/database';

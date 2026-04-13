@@ -3,8 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { db } from '@/db/database';
 import { TrendingUp } from 'lucide-react';
+import { getAllSetRecords } from '@/services/progressService';
 
 const COLORS = [
   '#8b5cf6', '#06b6d4', '#f59e0b', '#10b981',
@@ -12,7 +12,7 @@ const COLORS = [
 ];
 
 export default function ProgressPage() {
-  const records = useLiveQuery(() => db.workoutSetRecords.toArray());
+  const records = useLiveQuery(() => getAllSetRecords());
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
 
   const muscleGroups = useMemo(() => {
@@ -28,7 +28,6 @@ export default function ProgressPage() {
     const filtered = records.filter((r) => r.muscleGroup === activeMuscle);
     const useReps = activeMuscle === 'Core';
 
-    // Build per-exercise, per-date max weight (or reps for Core)
     const byExercise = new Map<string, Map<string, number>>();
     for (const r of filtered) {
       if (!byExercise.has(r.exerciseName)) byExercise.set(r.exerciseName, new Map());
@@ -41,7 +40,6 @@ export default function ProgressPage() {
     const exercises = [...byExercise.keys()].filter((name) => byExercise.get(name)!.size >= 1);
     if (exercises.length === 0) return { exercises: [], points: [] };
 
-    // Collect all unique dates, sorted
     const allDates = [...new Set(
       exercises.flatMap((name) => [...byExercise.get(name)!.keys()])
     )].sort();

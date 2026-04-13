@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/db/database';
 import type { Exercise } from '@/types';
 import { ArrowLeft, Search, ChevronDown, Check } from 'lucide-react';
+import { getAllExercises } from '@/services/exerciseService';
 
 interface Props {
   onConfirm: (exercises: Exercise[]) => void;
@@ -15,7 +15,7 @@ export default function ExercisePicker({ onConfirm, onClose, excludeIds = [] }: 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Map<number, Exercise>>(new Map());
 
-  const exercises = useLiveQuery(() => db.exercises.orderBy('name').toArray());
+  const exercises = useLiveQuery(() => getAllExercises());
 
   const { grouped, groups } = useMemo(() => {
     if (!exercises) return { grouped: {} as Record<string, Exercise[]>, groups: [] };

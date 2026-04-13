@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { db } from '@/db/database';
+import { getAllSessions } from '@/services/historyService';
 import MonthCalendar from '@/components/MonthCalendar';
 
 const MONTH_NAMES = [
@@ -32,9 +32,7 @@ export default function HistoryPage() {
   const today = { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
   const isCurrentMonth = viewYear === today.year && viewMonth === today.month;
 
-  const sessions = useLiveQuery(() =>
-    db.workoutSessions.orderBy('startedAt').reverse().toArray()
-  );
+  const sessions = useLiveQuery(() => getAllSessions());
 
   const sessionsInMonth = useMemo(() => {
     if (!sessions) return [];

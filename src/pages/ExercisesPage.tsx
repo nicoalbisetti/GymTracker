@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/db/database';
 import { Search, Plus, Trash2 } from 'lucide-react';
 import type { Exercise } from '@/types';
+import { getAllExercises, addExercise, deleteExercise } from '@/services/exerciseService';
 
 export default function ExercisesPage() {
   const [search, setSearch] = useState('');
@@ -11,7 +11,7 @@ export default function ExercisesPage() {
   const [newGroup, setNewGroup] = useState('');
   const [customGroup, setCustomGroup] = useState('');
 
-  const exercises = useLiveQuery(() => db.exercises.orderBy('name').toArray());
+  const exercises = useLiveQuery(() => getAllExercises());
 
   const muscleGroups = useMemo(() => {
     if (!exercises) return [];
@@ -44,7 +44,7 @@ export default function ExercisesPage() {
     const group = newGroup === 'Otro' ? customGroup.trim() : newGroup.trim();
     if (!name || !group) return;
     try {
-      await db.exercises.add({ name, muscleGroup: group });
+      await addExercise(name, group);
       resetForm();
     } catch (err) {
       console.error(err);
@@ -59,15 +59,14 @@ export default function ExercisesPage() {
     }
     if (!confirm(`¿Eliminar "${ex.name}"?`)) return;
     try {
-      const refs = await db.routineExercises.where('exerciseId').equals(ex.id!).count();
-      if (refs > 0) {
-        alert('Este ejercicio está en uso en una o más rutinas y no puede eliminarse.');
-        return;
-      }
-      await db.exercises.delete(ex.id!);
+      await deleteExercise(ex);
     } catch (err) {
-      console.error(err);
-      alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      if (err instanceof Error && err.message === 'in-use') {
+        alert('Este ejercicio está en uso en una o más rutinas y no puede eliminarse.');
+      } else {
+        console.error(err);
+        alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
+      }
     }
   }
 

@@ -1,19 +1,22 @@
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/db/database';
 import type { Routine } from '@/types';
 import { Plus, Trash2, Copy, ChevronRight, Dumbbell, Play } from 'lucide-react';
+import {
+  getRoutines,
+  deleteRoutine,
+  duplicateRoutine,
+} from '@/services/routineService';
+import { createRoutine } from '@/services/routineService';
+import { createWorkoutSession } from '@/services/workoutService';
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const routines = useLiveQuery(() => db.routines.orderBy('createdAt').reverse().toArray());
+  const routines = useLiveQuery(() => getRoutines());
 
-  async function createRoutine() {
+  async function handleCreateRoutine() {
     try {
-      const id = await db.routines.add({
-        name: 'Nueva rutina',
-        createdAt: new Date().toISOString(),
-      });
+      const id = await createRoutine();
       navigate(`/routine/${id}`);
     } catch (err) {
       console.error(err);
@@ -21,51 +24,21 @@ export default function HomePage() {
     }
   }
 
-  async function deleteRoutine(routine: Routine, e: React.MouseEvent) {
+  async function handleDeleteRoutine(routine: Routine, e: React.MouseEvent) {
     e.stopPropagation();
     if (!confirm(`¿Eliminar "${routine.name}"?`)) return;
     try {
-      await db.transaction('rw', [db.routines, db.routineExercises, db.sets], async () => {
-        const routineExercises = await db.routineExercises.where('routineId').equals(routine.id!).toArray();
-        for (const re of routineExercises) {
-          await db.sets.where('routineExerciseId').equals(re.id!).delete();
-        }
-        await db.routineExercises.where('routineId').equals(routine.id!).delete();
-        await db.routines.delete(routine.id!);
-      });
+      await deleteRoutine(routine);
     } catch (err) {
       console.error(err);
       alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
     }
   }
 
-  async function duplicateRoutine(routine: Routine, e: React.MouseEvent) {
+  async function handleDuplicateRoutine(routine: Routine, e: React.MouseEvent) {
     e.stopPropagation();
     try {
-    await db.transaction('rw', [db.routines, db.routineExercises, db.sets], async () => {
-      const newRoutineId = await db.routines.add({
-        name: `Copia de ${routine.name}`,
-        createdAt: new Date().toISOString(),
-      });
-      const routineExercises = await db.routineExercises.where('routineId').equals(routine.id!).toArray();
-      for (const re of routineExercises) {
-        const newReId = await db.routineExercises.add({
-          routineId: newRoutineId as number,
-          exerciseId: re.exerciseId,
-          orderIndex: re.orderIndex,
-          restSeconds: re.restSeconds,
-        });
-        const sets = await db.sets.where('routineExerciseId').equals(re.id!).toArray();
-        for (const set of sets) {
-          await db.sets.add({
-            routineExerciseId: newReId as number,
-            setNumber: set.setNumber,
-            reps: set.reps,
-            weight: set.weight,
-          });
-        }
-      }
-    });
+      await duplicateRoutine(routine);
     } catch (err) {
       console.error(err);
       alert('Error al guardar. Verificá el almacenamiento del dispositivo.');
@@ -74,11 +47,7 @@ export default function HomePage() {
 
   async function startWorkout(routine: Routine) {
     try {
-      const sessionId = await db.workoutSessions.add({
-        routineId: routine.id!,
-        routineName: routine.name,
-        startedAt: new Date().toISOString(),
-      });
+      const sessionId = await createWorkoutSession(routine.id!, routine.name);
       navigate(`/workout/${sessionId}`);
     } catch (err) {
       console.error(err);
@@ -91,7 +60,7 @@ export default function HomePage() {
       <div className="flex items-center justify-between pt-2">
         <h1 className="text-2xl font-bold text-white tracking-tight">Mis Rutinas</h1>
         <button
-          onClick={createRoutine}
+          onClick={handleCreateRoutine}
           className="bg-primary-500 text-white rounded-full w-10 h-10 flex items-center justify-center active:bg-primary-600 shadow-lg shadow-primary-500/30"
         >
           <Plus size={22} strokeWidth={2.5} />
@@ -128,14 +97,14 @@ export default function HomePage() {
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={(e) => deleteRoutine(routine, e)}
+                  onClick={(e) => handleDeleteRoutine(routine, e)}
                   className="text-slate-600 active:text-red-400 p-2 rounded-xl"
                   title="Eliminar rutina"
                 >
                   <Trash2 size={16} />
                 </button>
                 <button
-                  onClick={(e) => duplicateRoutine(routine, e)}
+                  onClick={(e) => handleDuplicateRoutine(routine, e)}
                   className="text-slate-600 active:text-primary-400 p-2 rounded-xl"
                   title="Copiar rutina"
                 >
