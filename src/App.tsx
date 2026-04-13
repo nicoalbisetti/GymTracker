@@ -12,6 +12,7 @@ import { useEffect } from "react";
 //import { seedFullRoutine } from "@/db/seedFullRoutine";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { db } from "@/db/database";
+import InstallPrompt from '@/components/InstallPrompt';
 
 ;(window as any).db = db
 
@@ -47,6 +48,7 @@ export default function App() {
         </Routes>
       </main>
       <BottomNav />
+      <InstallPrompt />
     </div>
   );
 }

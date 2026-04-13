@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from './database'
 
 export async function seedFullRoutine() {
