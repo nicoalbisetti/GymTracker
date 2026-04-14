@@ -200,8 +200,8 @@ export default function ActiveWorkoutPage() {
                 {sets.length > 0 && (
                   <div className="flex items-center gap-2 px-1">
                     <span className="w-7 text-xs text-slate-500 text-center">#</span>
-                    <span className="flex-1 text-xs text-slate-500 text-center">Kg</span>
                     <span className="flex-1 text-xs text-slate-500 text-center">Reps</span>
+                    <span className="flex-1 text-xs text-slate-500 text-center">Kg</span>
                     <span className="w-16" />
                   </div>
                 )}
@@ -214,20 +214,20 @@ export default function ActiveWorkoutPage() {
 
                       <input
                         type="number"
-                        inputMode="decimal"
-                        value={getVal(set, 'weight') || ''}
-                        placeholder="0"
-                        disabled={done}
-                        onChange={e => updateEdit(set.id!, 'weight', e.target.value)}
-                        className="flex-1 bg-slate-700/60 border border-slate-600/50 text-white placeholder:text-slate-500 rounded-xl px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-default"
-                      />
-                      <input
-                        type="number"
                         inputMode="numeric"
                         value={getVal(set, 'reps') || ''}
                         placeholder="0"
                         disabled={done}
                         onChange={e => updateEdit(set.id!, 'reps', e.target.value)}
+                        className="flex-1 bg-slate-700/60 border border-slate-600/50 text-white placeholder:text-slate-500 rounded-xl px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-default"
+                      />
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={getVal(set, 'weight') || ''}
+                        placeholder="0"
+                        disabled={done}
+                        onChange={e => updateEdit(set.id!, 'weight', e.target.value)}
                         className="flex-1 bg-slate-700/60 border border-slate-600/50 text-white placeholder:text-slate-500 rounded-xl px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-default"
                       />
 
