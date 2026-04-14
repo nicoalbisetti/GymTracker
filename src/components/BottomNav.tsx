@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Dumbbell, ListChecks, CalendarDays, TrendingUp, Settings } from 'lucide-react';
+import { Dumbbell, ListChecks, CalendarDays, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 const tabs = [
@@ -7,7 +7,6 @@ const tabs = [
   { to: '/exercises', label: 'Ejercicios', Icon: ListChecks },
   { to: '/history',   label: 'Historial',  Icon: CalendarDays },
   { to: '/progress',  label: 'Progresión', Icon: TrendingUp },
-  { to: '/settings',  label: 'Config',     Icon: Settings },
 ];
 
 export default function BottomNav() {
@@ -23,7 +22,7 @@ export default function BottomNav() {
   void signOut; // disponible para uso futuro en SettingsPage
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 flex justify-around items-center h-16 z-40 max-w-lg mx-auto safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 flex justify-around items-center h-16 z-40 max-w-lg mx-auto safe-area-bottom safe-area-left safe-area-right">
       {tabs.map(({ to, label, Icon }) => (
         <NavLink
           key={to}
