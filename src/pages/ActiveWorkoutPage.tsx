@@ -198,19 +198,19 @@ export default function ActiveWorkoutPage() {
               {/* Sets */}
               <div className="px-4 pt-2.5 pb-3 flex flex-col gap-2">
                 {sets.length > 0 && (
-                  <div className="flex items-center gap-2 px-1">
-                    <span className="w-7 text-xs text-slate-500 text-center">#</span>
+                  <div className="flex items-center gap-1.5 px-1">
+                    <span className="w-7 shrink-0 text-xs text-slate-500 text-center">#</span>
                     <span className="flex-1 text-xs text-slate-500 text-center">Reps</span>
                     <span className="flex-1 text-xs text-slate-500 text-center">Kg</span>
-                    <span className="w-16" />
+                    <span className="w-14 shrink-0" />
                   </div>
                 )}
 
                 {sets.map(set => {
                   const done = completedKeys.has(set.id!);
                   return (
-                    <div key={set.id} className={`flex items-center gap-2 transition-opacity ${done ? 'opacity-40' : ''}`}>
-                      <span className="w-7 text-sm text-slate-500 text-center font-medium">{set.setNumber}</span>
+                    <div key={set.id} className={`flex items-center gap-1.5 transition-opacity ${done ? 'opacity-40' : ''}`}>
+                      <span className="w-7 shrink-0 text-sm text-slate-500 text-center font-medium">{set.setNumber}</span>
 
                       <input
                         type="number"
@@ -219,7 +219,7 @@ export default function ActiveWorkoutPage() {
                         placeholder="0"
                         disabled={done}
                         onChange={e => updateEdit(set.id!, 'reps', e.target.value)}
-                        className="flex-1 bg-slate-700/60 border border-slate-600/50 text-white placeholder:text-slate-500 rounded-xl px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-default"
+                        className="flex-1 min-w-0 bg-slate-700/60 border border-slate-600/50 text-white placeholder:text-slate-500 rounded-xl px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-default"
                       />
                       <input
                         type="number"
@@ -228,13 +228,13 @@ export default function ActiveWorkoutPage() {
                         placeholder="0"
                         disabled={done}
                         onChange={e => updateEdit(set.id!, 'weight', e.target.value)}
-                        className="flex-1 bg-slate-700/60 border border-slate-600/50 text-white placeholder:text-slate-500 rounded-xl px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-default"
+                        className="flex-1 min-w-0 bg-slate-700/60 border border-slate-600/50 text-white placeholder:text-slate-500 rounded-xl px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-default"
                       />
 
                       <button
                         onClick={() => exercise && handleCompleteSet(re, set, exercise)}
                         disabled={done}
-                        className={`w-16 rounded-xl py-2 text-sm font-semibold transition-colors flex items-center justify-center ${
+                        className={`w-14 shrink-0 rounded-xl py-2 text-sm font-semibold transition-colors flex items-center justify-center ${
                           done
                             ? 'bg-green-500/20 text-green-400 cursor-default'
                             : 'bg-primary-500 text-white active:bg-primary-600'

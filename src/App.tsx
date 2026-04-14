@@ -21,7 +21,7 @@ function AppInner() {
 
   return (
     <div className="flex flex-col min-h-full max-w-lg mx-auto">
-      <main className={`flex-1 overflow-y-auto safe-area-top safe-area-left safe-area-right ${fullscreen ? '' : 'pb-16'}`}>
+      <main className={`flex-1 overflow-y-auto safe-area-left safe-area-right ${fullscreen ? 'safe-area-top' : 'pb-16'}`}>
         <Routes>
           {/* Ruta pública */}
           <Route path="/login" element={<LoginPage />} />

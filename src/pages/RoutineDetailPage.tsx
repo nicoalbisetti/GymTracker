@@ -91,37 +91,37 @@ function SortableExerciseCard({ re, exercise, sets, onAddSet, onUpdateSet, onDel
       </div>
 
       {/* Sets */}
-      <div className="px-4 pt-2.5 pb-3 flex flex-col gap-2">
+      <div className="px-3 pt-2.5 pb-3 flex flex-col gap-2">
         {sets.length > 0 && (
-          <div className="flex items-center gap-2 px-1">
-            <span className="w-8 text-xs text-slate-500 text-center">Serie</span>
-            <span className="flex-1 text-xs text-slate-500 text-center">Kg</span>
+          <div className="flex items-center gap-1.5 px-1">
+            <span className="w-7 shrink-0 text-xs text-slate-500 text-center">Serie</span>
             <span className="flex-1 text-xs text-slate-500 text-center">Reps</span>
-            <span className="w-8" />
+            <span className="flex-1 text-xs text-slate-500 text-center">Kg</span>
+            <span className="w-7 shrink-0" />
           </div>
         )}
         {sets.map((set) => (
-          <div key={set.id} className="flex items-center gap-2">
-            <span className="w-8 text-sm text-slate-500 text-center font-medium">{set.setNumber}</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              defaultValue={set.weight || ''}
-              placeholder="0"
-              onBlur={(e) => onUpdateSet(set, 'weight', e.target.value)}
-              className="flex-1 bg-slate-700/60 border border-slate-600/50 rounded-xl px-3 py-2 text-sm text-center text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+          <div key={set.id} className="flex items-center gap-1.5">
+            <span className="w-7 shrink-0 text-sm text-slate-500 text-center font-medium">{set.setNumber}</span>
             <input
               type="number"
               inputMode="numeric"
               defaultValue={set.reps || ''}
               placeholder="0"
               onBlur={(e) => onUpdateSet(set, 'reps', e.target.value)}
-              className="flex-1 bg-slate-700/60 border border-slate-600/50 rounded-xl px-3 py-2 text-sm text-center text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="flex-1 min-w-0 bg-slate-700/60 border border-slate-600/50 rounded-xl px-2 py-2 text-sm text-center text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <input
+              type="number"
+              inputMode="decimal"
+              defaultValue={set.weight || ''}
+              placeholder="0"
+              onBlur={(e) => onUpdateSet(set, 'weight', e.target.value)}
+              className="flex-1 min-w-0 bg-slate-700/60 border border-slate-600/50 rounded-xl px-2 py-2 text-sm text-center text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <button
               onClick={() => onDeleteSet(set.id!, re.id!)}
-              className="w-8 text-slate-600 active:text-red-400 flex items-center justify-center"
+              className="w-7 shrink-0 text-slate-600 active:text-red-400 flex items-center justify-center"
             >
               <X size={16} />
             </button>
