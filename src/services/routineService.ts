@@ -44,7 +44,13 @@ export async function renameRoutine(id: string, name: string): Promise<void> {
 }
 
 export async function deleteRoutine(routine: Routine): Promise<void> {
-  // CASCADE en la DB elimina routine_exercises y sets automáticamente
+  // 1. Eliminar workout_sessions de esta rutina (CASCADE elimina workout_set_records)
+  await supabase
+    .from('workout_sessions')
+    .delete()
+    .eq('routine_id', routine.id!);
+
+  // 2. Eliminar la rutina (CASCADE elimina routine_exercises y sets)
   const { error } = await supabase
     .from('routines')
     .delete()

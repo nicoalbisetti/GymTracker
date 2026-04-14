@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Timer, ClipboardList } from 'lucide-react';
-import { getSessionById, getSessionRecords } from '@/services/historyService';
+import { ArrowLeft, Calendar, Clock, Timer, ClipboardList, Trash2 } from 'lucide-react';
+import { getSessionById, getSessionRecords, deleteSession } from '@/services/historyService';
 import type { WorkoutSession, WorkoutSetRecord } from '@/types';
 
 export default function SessionDetailPage() {
@@ -11,6 +11,18 @@ export default function SessionDetailPage() {
   const [session, setSession] = useState<WorkoutSession | undefined>(undefined);
   const [records, setRecords] = useState<WorkoutSetRecord[]>([]);
   const [loading, setLoading] = useState(true);
+
+  async function handleDelete() {
+    if (!sessionId) return;
+    if (!confirm('¿Eliminar esta sesión?')) return;
+    try {
+      await deleteSession(sessionId);
+      navigate('/history');
+    } catch (err) {
+      console.error(err);
+      alert('Error al eliminar. Verificá tu conexión.');
+    }
+  }
 
   useEffect(() => {
     if (!sessionId) return;
@@ -60,7 +72,10 @@ export default function SessionDetailPage() {
           <button onClick={() => navigate('/history')} className="text-slate-400 p-1.5 rounded-xl active:bg-slate-800">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-lg font-bold text-white tracking-tight">{session.routineName}</h1>
+          <h1 className="flex-1 text-lg font-bold text-white tracking-tight">{session.routineName}</h1>
+          <button onClick={handleDelete} className="text-slate-500 active:text-red-400 p-1.5 rounded-xl active:bg-slate-800">
+            <Trash2 size={18} />
+          </button>
         </div>
         <div className="flex flex-wrap gap-3">
           <span className="inline-flex items-center gap-1.5 text-sm text-slate-400">

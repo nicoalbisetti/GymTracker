@@ -15,6 +15,14 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
   }
+
+  /* Evita el auto-zoom de iOS al enfocar inputs (iOS hace zoom cuando font-size < 16px) */
+  input[type="number"],
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    font-size: 16px;
+  }
 }
 
 @layer utilities {
