@@ -1,12 +1,17 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import type { UserProfile } from '@/types/profile';
+import { getProfile } from '@/services/profileService';
 
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  profile: UserProfile | null;
+  profileLoading: boolean;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -14,10 +19,23 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  async function refreshProfile() {
+    if (!session?.user) return;
+    setProfileLoading(true);
+    const p = await getProfile(session.user.id);
+    setProfile(p);
+    setProfileLoading(false);
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session?.user) {
+        getProfile(session.user.id).then(setProfile);
+      }
       setLoading(false);
     });
 
@@ -25,6 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session?.user) {
+        getProfile(session.user.id).then(setProfile);
+      } else {
+        setProfile(null);
+      }
       setLoading(false);
     });
 
@@ -42,6 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         loading,
         signOut,
+        profile,
+        profileLoading,
+        refreshProfile,
       }}
     >
       {children}
