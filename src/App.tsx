@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import BottomNav from '@/components/BottomNav';
@@ -47,6 +48,7 @@ export default function App() {
   return (
     <AuthProvider>
       <AppInner />
+      <Analytics />
     </AuthProvider>
   );
 }
