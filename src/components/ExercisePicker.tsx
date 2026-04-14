@@ -56,7 +56,7 @@ export default function ExercisePicker({ onConfirm, onClose, excludeIds = [] }: 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-4 border-b border-slate-800">
+      <div className="flex items-center gap-3 px-4 py-4 border-b border-slate-800 safe-area-top safe-area-left safe-area-right">
         <button onClick={onClose} className="text-slate-400 p-1.5 rounded-xl active:bg-slate-800">
           <ArrowLeft size={20} />
         </button>
@@ -123,7 +123,7 @@ export default function ExercisePicker({ onConfirm, onClose, excludeIds = [] }: 
       </div>
 
       {/* Confirm button */}
-      <div className="px-4 py-4 border-t border-slate-800 bg-slate-950">
+      <div className="px-4 py-4 border-t border-slate-800 bg-slate-950 safe-area-bottom safe-area-left safe-area-right">
         <button
           onClick={() => selectedList.length > 0 && onConfirm(selectedList)}
           disabled={selectedList.length === 0}
