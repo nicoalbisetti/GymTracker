@@ -11,7 +11,14 @@ export default function AiChatPage() {
   const { user, profile, refreshProfile } = useAuth();
   const { canUseAi, queriesLeft, isPro } = useAiAccess();
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('ai-chat-messages');
+      return saved ? (JSON.parse(saved) as ChatMessage[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [userCtx, setUserCtx] = useState<UserContext | null>(null);
   const [ctxLoading, setCtxLoading] = useState(true);
   const [input, setInput] = useState('');
@@ -41,6 +48,9 @@ export default function AiChatPage() {
   }, [canUseAi, user, profile]);
 
   useEffect(() => {
+    try {
+      sessionStorage.setItem('ai-chat-messages', JSON.stringify(messages));
+    } catch { /* quota exceeded — ignorar */ }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
