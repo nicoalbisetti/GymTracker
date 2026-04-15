@@ -6,9 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 export default function LoginPage() {
   const { session } = useAuth();
 
-  const [step, setStep] = useState<'invite' | 'auth'>(() =>
-    sessionStorage.getItem('invite-validated') === '1' ? 'auth' : 'invite'
-  );
+  const [step, setStep] = useState<'invite' | 'auth'>('auth');
   const [inviteInput, setInviteInput] = useState('');
   const [inviteError, setInviteError] = useState('');
   const [email, setEmail] = useState('');
@@ -99,6 +97,17 @@ export default function LoginPage() {
             >
               Continuar
             </button>
+            <button
+              onClick={() => {
+                setStep('auth');
+                setAuthMode('login');
+                setInviteInput('');
+                setInviteError('');
+              }}
+              className="text-sm text-slate-500 hover:text-slate-400 text-center"
+            >
+              ← Volver al inicio de sesión
+            </button>
           </div>
         ) : (
           /* ── Paso 2: auth ── */
@@ -171,7 +180,18 @@ export default function LoginPage() {
 
             {/* Toggle login / register */}
             <button
-              onClick={() => { setAuthMode(m => m === 'login' ? 'register' : 'login'); setAuthError(''); setRegisterSuccess(false); }}
+              onClick={() => {
+                if (authMode === 'login') {
+                  setAuthMode('register');
+                  if (sessionStorage.getItem('invite-validated') !== '1') {
+                    setStep('invite');
+                  }
+                } else {
+                  setAuthMode('login');
+                }
+                setAuthError('');
+                setRegisterSuccess(false);
+              }}
               className="text-sm text-slate-400 hover:text-slate-300 text-center"
             >
               {authMode === 'login'
