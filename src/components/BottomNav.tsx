@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Dumbbell, ListChecks, CalendarDays, TrendingUp, Sparkles } from 'lucide-react';
+import { Dumbbell, ListChecks, CalendarDays, TrendingUp, Sparkles, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAiAccess } from '@/hooks/useAiAccess';
 
@@ -8,6 +8,7 @@ const baseTabs = [
   { to: '/exercises', label: 'Ejercicios', Icon: ListChecks },
   { to: '/history',   label: 'Historial',  Icon: CalendarDays },
   { to: '/progress',  label: 'Progresión', Icon: TrendingUp },
+  { to: '/settings',  label: 'Ajustes',    Icon: Settings },
 ];
 
 const aiTab = { to: '/ai', label: 'IA', Icon: Sparkles };
