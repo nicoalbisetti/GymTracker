@@ -39,7 +39,31 @@ export async function buildUserContext(
             }, 0) / recentSessions.length
         );
 
-  // 3. Registros de series últimos 30 días
+  // 3. Rutinas definidas con sus ejercicios
+  const { data: routinesRaw } = await supabase
+    .from('routines')
+    .select(`
+      name,
+      routine_exercises (
+        order_index,
+        exercises ( name, muscle_group )
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  const routines = (routinesRaw ?? []).map((r: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+    name: r.name as string,
+    exercises: ((r.routine_exercises ?? []) as any[]) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .sort((a: any, b: any) => a.order_index - b.order_index) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .map((re: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+        name: re.exercises?.name as string,
+        muscle: re.exercises?.muscle_group as string,
+      }))
+      .filter((e: { name: string; muscle: string }) => e.name),
+  }));
+
+  // 4. Registros de series últimos 30 días
   const { data: recentRecords } = await supabase
     .from('workout_set_records')
     .select('exercise_name, muscle_group, weight, session_id, completed_at')
@@ -89,6 +113,7 @@ export async function buildUserContext(
       experience: profile.experience,
       weightKg: profile.weightKg,
     },
+    routines,
     last30days: {
       totalSessions: recentSessions.length,
       avgDurationMinutes,

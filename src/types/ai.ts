@@ -11,6 +11,10 @@ export interface UserContext {
     experience: string | null;
     weightKg: number | null;
   };
+  routines: Array<{
+    name: string;
+    exercises: Array<{ name: string; muscle: string }>;
+  }>;
   last30days: {
     totalSessions: number;
     avgDurationMinutes: number;

@@ -36,12 +36,24 @@ function buildSystemPrompt(ctx: UserContext): string {
     )
     .join('\n');
 
+  const routineLines = ctx.routines.length === 0
+    ? '  (sin rutinas definidas)'
+    : ctx.routines
+        .map((r) => {
+          const exList = r.exercises.map((e) => `${e.name} (${e.muscle})`).join(', ');
+          return `  - ${r.name}: ${exList || '(sin ejercicios)'}`;
+        })
+        .join('\n');
+
   return `Sos un asistente de entrenamiento para GymTracker. Respondés en español rioplatense, de forma concisa y práctica.
 
 ## Perfil del usuario
 - Objetivo: ${goal}
 - Nivel: ${exp}
 - Peso corporal: ${weight}
+
+## Rutinas definidas
+${routineLines}
 
 ## Actividad últimos 30 días
 - Sesiones completadas: ${ctx.last30days.totalSessions}
