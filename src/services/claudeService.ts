@@ -1,7 +1,7 @@
 import type { ChatMessage, UserContext } from '@/types/ai';
 
 const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY as string;
-const MODEL = 'claude-sonnet-4-20250514';
+const MODEL = 'claude-sonnet-4-5-20250514';
 const MAX_TOKENS = 1024;
 
 function buildSystemPrompt(ctx: UserContext): string {

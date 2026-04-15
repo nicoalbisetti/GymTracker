@@ -1,0 +1,156 @@
+Brazos
+	•	Barbell Curl
+	•	EZ Bar Curl
+	•	Dumbbell Curl
+	•	Alternating Dumbbell Curl
+	•	Hammer Curl
+	•	Cross Body Hammer Curl
+	•	Concentration Curl
+	•	Preacher Curl
+	•	Spider Curl
+	•	Incline Dumbbell Curl
+	•	Cable Curl
+	•	Single Arm Cable Curl
+	•	Rope Cable Curl
+	•	High Cable Curl
+	•	Bayesian Curl
+	•	Reverse Curl
+	•	Zottman Curl
+	•	Triceps Pushdown (Bar / Rope / V-Bar)
+	•	Overhead Triceps Extension (Dumbbell / Cable)
+	•	Skull Crushers
+	•	Close Grip Bench Press
+	•	Dips (Triceps Focus)
+	•	Bench Dips
+	•	Cable Overhead Extension
+	•	Single Arm Cable Pushdown
+	•	Reverse Grip Pushdown
+	•	Kickbacks
+	•	JM Press
+
+Hombros
+	•	Overhead Press (Barbell)
+	•	Dumbbell Shoulder Press
+	•	Arnold Press
+	•	Push Press
+	•	Lateral Raise
+	•	Cable Lateral Raise
+	•	Front Raise
+	•	Plate Raise
+	•	Rear Delt Fly
+	•	Reverse Pec Deck
+	•	Face Pull
+	•	Upright Row
+	•	Cuban Press
+	•	Cable Rear Delt Fly
+
+Pecho
+	•	Bench Press (Flat)
+	•	Incline Bench Press
+	•	Decline Bench Press
+	•	Dumbbell Bench Press
+	•	Incline Dumbbell Press
+	•	Chest Fly (Dumbbell)
+	•	Cable Fly (High / Mid / Low)
+	•	Pec Deck Machine
+	•	Push-ups
+	•	Incline Push-ups
+	•	Decline Push-ups
+	•	Chest Dips
+	•	Svend Press
+	•	Cable Press
+
+Espalda
+	•	Pull-up
+	•	Chin-up
+	•	Lat Pulldown (Wide / Close / Reverse Grip)
+	•	Straight Arm Pulldown
+	•	Seated Cable Row
+	•	Single Arm Cable Row
+	•	Bent Over Row
+	•	Barbell Row
+	•	T-Bar Row
+	•	Dumbbell Row
+	•	One Arm Dumbbell Row
+	•	Chest Supported Row
+	•	Deadlift
+	•	Rack Pull
+	•	Face Pull
+	•	Hyperextensions
+	•	Reverse Hyperextensions
+
+Core
+	•	Crunch
+	•	Sit-up
+	•	Plank
+	•	Side Plank
+	•	Hanging Leg Raise
+	•	Hanging Knee Raise
+	•	Lying Leg Raise
+	•	Russian Twist
+	•	Bicycle Crunch
+	•	Mountain Climbers
+	•	Ab Wheel Rollout
+	•	Cable Crunch
+	•	Rope Crunch
+	•	Woodchoppers (Cable High to Low / Low to High)
+	•	Pallof Press
+	•	Cable Twist
+	•	Toe Touches
+	•	V-ups
+	•	Dragon Flag
+	•	Hollow Body Hold
+
+Glúteos
+	•	Hip Thrust (Barbell / Machine / Single Leg)
+	•	Glute Bridge
+	•	Cable Kickbacks
+	•	Machine Kickbacks
+	•	Donkey Kicks
+	•	Fire Hydrants
+	•	Frog Pumps
+	•	Reverse Hyperextensions
+	•	Bulgarian Split Squat
+	•	Step-ups (Glute Focus)
+	•	Walking Lunges
+	•	Sumo Squat
+	•	Sumo Deadlift
+	•	Cable Pull Through
+
+Piernas
+	•	Squat (Back Squat)
+	•	Front Squat
+	•	Goblet Squat
+	•	Hack Squat
+	•	Leg Press
+	•	Leg Extension
+	•	Bulgarian Split Squat
+	•	Step-ups
+	•	Sissy Squat
+	•	Box Squat
+	•	Zercher Squat
+	•	Safety Bar Squat
+	•	Anderson Squat
+	•	Walking Lunges
+	•	Forward Lunges
+	•	Reverse Lunges
+
+	•	Romanian Deadlift
+	•	Stiff Leg Deadlift
+	•	Leg Curl (Lying / Seated / Standing)
+	•	Nordic Curl
+	•	Good Morning
+	•	Cable Leg Curl
+
+	•	Cable Lunges
+	•	Lateral Lunges
+	•	Curtsy Lunges
+	•	Deficit Lunges
+	•	Cable Squat
+	•	Cable Hip Abduction
+	•	Cable Hip Adduction
+
+	•	Standing Calf Raise
+	•	Seated Calf Raise
+	•	Donkey Calf Raise
+	•	Single Leg Calf Raise

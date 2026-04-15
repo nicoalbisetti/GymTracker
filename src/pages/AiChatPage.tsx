@@ -73,8 +73,10 @@ export default function AiChatPage() {
       ]);
       await incrementAiQueries(user.id);
       await refreshProfile();
-    } catch {
-      setError('Error al conectar con el asistente. Intentá de nuevo.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      console.error('[AiChat] error:', msg);
+      setError(`Error: ${msg}`);
     } finally {
       setSending(false);
     }
