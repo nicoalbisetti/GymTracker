@@ -34,14 +34,18 @@ export default function AiChatPage() {
     buildUserContext(user.id, profile)
       .then((ctx) => {
         setUserCtx(ctx);
-        setMessages([
-          {
-            id: 'welcome',
-            role: 'assistant',
-            content: '¡Hola! Puedo analizar tu entrenamiento de los últimos 30 días. ¿Qué querés saber?',
-            createdAt: new Date().toISOString(),
-          },
-        ]);
+        setMessages((prev) =>
+          prev.length > 0
+            ? prev
+            : [
+                {
+                  id: 'welcome',
+                  role: 'assistant',
+                  content: '¡Hola! Puedo analizar tu entrenamiento de los últimos 30 días. ¿Qué querés saber?',
+                  createdAt: new Date().toISOString(),
+                },
+              ]
+        );
       })
       .catch(() => setError('No se pudo cargar el contexto de entrenamiento.'))
       .finally(() => setCtxLoading(false));
