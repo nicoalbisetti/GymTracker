@@ -13,12 +13,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY no configurada en el servidor' });
   }
 
+
+
   // Inicializar Langfuse por invocación (no como singleton — Vercel es stateless)
   const langfuse = new Langfuse({
     secretKey: process.env.LANGFUSE_SECRET_KEY,
     publicKey: process.env.LANGFUSE_PUBLIC_KEY,
     baseUrl: process.env.LANGFUSE_HOST ?? 'https://cloud.langfuse.com',
   });
+
+  // Agregar esto:
+console.log('[Langfuse] secret key present:', !!process.env.LANGFUSE_SECRET_KEY);
+console.log('[Langfuse] public key present:', !!process.env.LANGFUSE_PUBLIC_KEY);
 
   const { model, max_tokens, system, messages, userId } = req.body as {
     model: string;
@@ -90,6 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // shutdownAsync() fuerza el flush de los eventos pendientes antes de salir.
     // NO usar langfuse.flush() — es async sin await garantizado en este contexto.
     await langfuse.shutdownAsync();
+    console.log('[Langfuse] shutdownAsync completed');
   }
 
   return res.status(anthropicStatus!).json(anthropicData);
