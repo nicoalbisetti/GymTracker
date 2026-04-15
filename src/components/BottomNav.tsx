@@ -1,17 +1,21 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Dumbbell, ListChecks, CalendarDays, TrendingUp } from 'lucide-react';
+import { Dumbbell, ListChecks, CalendarDays, TrendingUp, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useAiAccess } from '@/hooks/useAiAccess';
 
-const tabs = [
+const baseTabs = [
   { to: '/',          label: 'Rutinas',    Icon: Dumbbell },
   { to: '/exercises', label: 'Ejercicios', Icon: ListChecks },
   { to: '/history',   label: 'Historial',  Icon: CalendarDays },
   { to: '/progress',  label: 'Progresión', Icon: TrendingUp },
 ];
 
+const aiTab = { to: '/ai', label: 'IA', Icon: Sparkles };
+
 export default function BottomNav() {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isPro } = useAiAccess();
 
   if (
     location.pathname.startsWith('/routine/') ||
@@ -20,6 +24,8 @@ export default function BottomNav() {
   ) return null;
 
   void signOut; // disponible para uso futuro en SettingsPage
+
+  const tabs = isPro ? [...baseTabs, aiTab] : baseTabs;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 flex justify-around items-center h-16 z-40 max-w-lg mx-auto safe-area-bottom safe-area-left safe-area-right">

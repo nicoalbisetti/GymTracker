@@ -11,6 +11,7 @@ import HistoryPage from '@/pages/HistoryPage';
 import SessionDetailPage from '@/pages/SessionDetailPage';
 import ProgressPage from '@/pages/ProgressPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import AiChatPage from '@/pages/AiChatPage';
 import InstallPrompt from '@/components/InstallPrompt';
 
 function AppInner() {
@@ -35,6 +36,7 @@ function AppInner() {
           <Route path="/history/:sessionId" element={<ProtectedRoute><SessionDetailPage /></ProtectedRoute>} />
           <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/ai" element={<ProtectedRoute><AiChatPage /></ProtectedRoute>} />
         </Routes>
       </main>
       <BottomNav />
