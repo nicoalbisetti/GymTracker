@@ -105,7 +105,7 @@ export async function buildUserContext(
       sessionCount: data.sessions.size,
     }))
     .sort((a, b) => b.sessionCount - a.sessionCount)
-    .slice(0, 10);
+    .slice(0, 30);
 
   return {
     profile: {
