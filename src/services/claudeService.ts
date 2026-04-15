@@ -1,6 +1,5 @@
 import type { ChatMessage, UserContext } from '@/types/ai';
 
-const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY as string;
 const MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 1024;
 
@@ -64,21 +63,14 @@ export async function sendChatMessage(
   messages: ChatMessage[],
   ctx: UserContext
 ): Promise<string> {
-  if (!API_KEY) throw new Error('VITE_ANTHROPIC_API_KEY no configurada');
-
   const apiMessages = messages.map((m) => ({
     role: m.role,
     content: m.content,
   }));
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('/api/chat', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-client-side-key-allowed': 'true',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: MAX_TOKENS,
