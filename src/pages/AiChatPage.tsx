@@ -75,7 +75,7 @@ export default function AiChatPage() {
     setError(null);
 
     try {
-      const reply = await sendChatMessage(nextMessages, userCtx);
+      const reply = await sendChatMessage(nextMessages, userCtx, user.id);
       setMessages((prev) => [
         ...prev,
         {

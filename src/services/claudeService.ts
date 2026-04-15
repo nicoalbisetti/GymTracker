@@ -73,8 +73,12 @@ Respondé preguntas sobre el entrenamiento del usuario basándote en estos datos
 
 export async function sendChatMessage(
   messages: ChatMessage[],
-  ctx: UserContext
+  ctx: UserContext,
+  userId?: string
 ): Promise<string> {
+  const systemPrompt = buildSystemPrompt(ctx);
+  console.log('[AI context]', systemPrompt);
+
   const apiMessages = messages.map((m) => ({
     role: m.role,
     content: m.content,
@@ -86,8 +90,9 @@ export async function sendChatMessage(
     body: JSON.stringify({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system: buildSystemPrompt(ctx),
+      system: systemPrompt,
       messages: apiMessages,
+      userId,
     }),
   });
 
