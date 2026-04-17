@@ -12,11 +12,24 @@ const COLORS = [
   '#f43f5e', '#3b82f6', '#a78bfa', '#fbbf24',
 ];
 
+type MetricMode = 'e1rm' | 'volume';
+
+function calcE1RM(weight: number, reps: number): number {
+  if (weight === 0) return reps;
+  if (reps === 1) return weight;
+  return weight * (1 + reps / 30);
+}
+
+function calcVolume(weight: number, reps: number): number {
+  return weight * reps;
+}
+
 export default function ProgressPage() {
   const { user } = useAuth();
   const [records, setRecords] = useState<WorkoutSetRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
+  const [metricMode, setMetricMode] = useState<MetricMode>('e1rm');
 
   useEffect(() => {
     if (!user) return;
@@ -33,22 +46,33 @@ export default function ProgressPage() {
   const activeMuscle = selectedMuscle ?? muscleGroups[0] ?? null;
 
   const chartData = useMemo(() => {
-    if (!activeMuscle) return { exercises: [], points: [], useReps: false };
+    if (!activeMuscle) return { exercises: [], points: [], label: '' };
 
     const filtered = records.filter((r) => r.muscleGroup === activeMuscle);
-    const useReps = activeMuscle === 'Core';
+    const isCore = activeMuscle === 'Core';
 
     const byExercise = new Map<string, Map<string, number>>();
+
     for (const r of filtered) {
       if (!byExercise.has(r.exerciseName)) byExercise.set(r.exerciseName, new Map());
       const dateMap = byExercise.get(r.exerciseName)!;
       const date = r.completedAt.slice(0, 10);
-      const value = useReps ? r.reps : r.weight;
-      dateMap.set(date, Math.max(dateMap.get(date) ?? 0, value));
+
+      let value: number;
+      if (isCore) {
+        value = r.reps;
+        dateMap.set(date, Math.max(dateMap.get(date) ?? 0, value));
+      } else if (metricMode === 'e1rm') {
+        value = calcE1RM(r.weight, r.reps);
+        dateMap.set(date, Math.max(dateMap.get(date) ?? 0, value));
+      } else {
+        value = calcVolume(r.weight, r.reps);
+        dateMap.set(date, (dateMap.get(date) ?? 0) + value);
+      }
     }
 
     const exercises = [...byExercise.keys()].filter((name) => byExercise.get(name)!.size >= 1);
-    if (exercises.length === 0) return { exercises: [], points: [] };
+    if (exercises.length === 0) return { exercises: [], points: [], label: '' };
 
     const allDates = [...new Set(
       exercises.flatMap((name) => [...byExercise.get(name)!.keys()])
@@ -60,14 +84,22 @@ export default function ProgressPage() {
       });
       const entry: Record<string, string | number> = { date: label };
       for (const name of exercises) {
-        const val = byExercise.get(name)!.get(date);
-        if (val !== undefined) entry[name] = val;
+        const raw = byExercise.get(name)!.get(date);
+        if (raw !== undefined) {
+          entry[name] = isCore ? raw : Math.round(raw * 10) / 10;
+        }
       }
       return entry;
     });
 
-    return { exercises, points, useReps };
-  }, [records, activeMuscle]);
+    const label = isCore
+      ? 'Repeticiones máximas por sesión'
+      : metricMode === 'e1rm'
+        ? '1RM estimado por sesión (kg)'
+        : 'Volumen total por sesión (kg·reps)';
+
+    return { exercises, points, label };
+  }, [records, activeMuscle, metricMode]);
 
   if (loading) return null;
 
@@ -105,8 +137,32 @@ export default function ProgressPage() {
             <p className="text-center text-slate-500 py-10">Sin datos para este grupo muscular</p>
           ) : (
             <div className="bg-slate-800 rounded-2xl border border-slate-700/50 p-4">
+              {activeMuscle !== 'Core' && (
+                <div className="flex gap-1 mb-4">
+                  <button
+                    onClick={() => setMetricMode('e1rm')}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      metricMode === 'e1rm'
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-slate-700 text-slate-400 active:bg-slate-600'
+                    }`}
+                  >
+                    1RM estimado
+                  </button>
+                  <button
+                    onClick={() => setMetricMode('volume')}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      metricMode === 'volume'
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-slate-700 text-slate-400 active:bg-slate-600'
+                    }`}
+                  >
+                    Volumen
+                  </button>
+                </div>
+              )}
               <p className="text-xs text-slate-500 mb-4">
-                {chartData.useReps ? 'Repeticiones máximas por sesión' : 'Peso máximo por sesión (kg)'}
+                {chartData.label}
               </p>
               <ResponsiveContainer width="100%" height={240}>
                 <LineChart data={chartData.points} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
@@ -114,7 +170,14 @@ export default function ProgressPage() {
                   <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} />
                   <Tooltip
-                    formatter={(value, name) => [`${value}${chartData.useReps ? ' reps' : ' kg'}`, name]}
+                    formatter={(value, name) => {
+                      const unit = activeMuscle === 'Core'
+                        ? ' reps'
+                        : metricMode === 'e1rm'
+                          ? ' kg'
+                          : ' kg·reps';
+                      return [`${value}${unit}`, name];
+                    }}
                     labelStyle={{ fontSize: 12, color: '#f1f5f9' }}
                     contentStyle={{ fontSize: 12, borderRadius: 10, backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f1f5f9' }}
                   />
