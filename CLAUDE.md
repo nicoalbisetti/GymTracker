@@ -18,7 +18,8 @@
 1. **Crear tarea en ClickUp** en la lista `901711957073` (GymTracker, folder "Proyectos", workspace Aqua-lean)
 2. **Implementar** los cambios
 3. **Commitear** con el mensaje incluyendo `CU-<task_id>` al final
-4. **Marcar la tarea como completada** en ClickUp
+4. **Pushear** a `origin main` (`git push origin main`) para disparar el deploy en Vercel
+5. **Marcar la tarea como completada** en ClickUp
 5. **Crear el archivo** `/tmp/claude_ready_for_testing.txt` con un resumen de lo que se hizo (esto dispara la notificación a Slack)
 
 ## Estructura principal
