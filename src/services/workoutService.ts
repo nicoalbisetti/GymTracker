@@ -87,3 +87,30 @@ export async function addSetDuringWorkout(
     });
   if (error) throw error;
 }
+
+export async function deleteSetDuringWorkout(
+  setId: string,
+  sessionId: string,
+  routineExerciseId: string,
+  allSets: ExerciseSet[]
+): Promise<void> {
+  const setNumber = allSets.find(s => s.id === setId)?.setNumber ?? -1;
+  const { error: e1 } = await supabase
+    .from('workout_set_records')
+    .delete()
+    .eq('session_id', sessionId)
+    .eq('set_number', setNumber);
+  if (e1) throw e1;
+
+  const { error: e2 } = await supabase.from('sets').delete().eq('id', setId);
+  if (e2) throw e2;
+
+  const remaining = allSets
+    .filter(s => s.routineExerciseId === routineExerciseId && s.id !== setId)
+    .sort((a, b) => a.setNumber - b.setNumber);
+  await Promise.all(
+    remaining.map((s, i) =>
+      supabase.from('sets').update({ set_number: i + 1 }).eq('id', s.id!)
+    )
+  );
+}

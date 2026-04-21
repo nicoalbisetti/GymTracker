@@ -75,7 +75,7 @@ export default function ProgressPage() {
           value = calcE1RM(r.weight, r.reps);
           entry.value = Math.max(entry.value, value);
         } else {
-          entry.value += calcVolume(r.weight, r.reps);
+          entry.value = Math.max(entry.value, calcVolume(r.weight, r.reps));
         }
       }
 
@@ -114,7 +114,7 @@ export default function ProgressPage() {
         ? 'Reps máximas — últimas 20 sesiones'
         : metricMode === 'e1rm'
           ? '1RM estimado — últimas 20 sesiones (kg)'
-          : 'Volumen por sesión — últimas 20 sesiones (kg·reps)';
+          : 'Mejor serie (peso×reps) — últimas 20 sesiones';
 
       return { exercises, points, label };
     } else {
@@ -141,31 +141,8 @@ export default function ProgressPage() {
           const v = calcE1RM(r.weight, r.reps);
           monthMap.set(month, Math.max(monthMap.get(month) ?? 0, v));
         } else {
-          // volume: handled in second pass below
-        }
-      }
-
-      // For volume mode: accumulate per session, then take max session per month
-      if (!isCore && metricMode === 'volume') {
-        // Reset and recompute using session accumulation
-        byExercise.clear();
-        const sessionAccum = new Map<string, Map<string, number>>(); // exercise → (month|session → value)
-        for (const r of filtered) {
-          const month = r.completedAt.slice(0, 7);
-          if (!months.includes(month)) continue;
-          if (!sessionAccum.has(r.exerciseName)) sessionAccum.set(r.exerciseName, new Map());
-          const sm = sessionAccum.get(r.exerciseName)!;
-          const sessionKey = r.sessionId ?? r.completedAt.slice(0, 10);
-          const key = `${month}|${sessionKey}`;
-          sm.set(key, (sm.get(key) ?? 0) + calcVolume(r.weight, r.reps));
-        }
-        for (const [name, sm] of sessionAccum) {
-          const monthMap = new Map<string, number>();
-          for (const [key, val] of sm) {
-            const month = key.split('|')[0];
-            monthMap.set(month, Math.max(monthMap.get(month) ?? 0, val));
-          }
-          byExercise.set(name, monthMap);
+          const v = calcVolume(r.weight, r.reps);
+          monthMap.set(month, Math.max(monthMap.get(month) ?? 0, v));
         }
       }
 
@@ -189,7 +166,7 @@ export default function ProgressPage() {
         ? 'Mejor marca mensual (reps)'
         : metricMode === 'e1rm'
           ? 'Mejor 1RM estimado por mes (kg)'
-          : 'Mejor volumen por sesión del mes (kg·reps)';
+          : 'Mejor serie por mes (peso×reps)';
 
       return { exercises, points, label };
     }
@@ -274,7 +251,7 @@ export default function ProgressPage() {
                         : 'bg-slate-700 text-slate-400 active:bg-slate-600'
                     }`}
                   >
-                    Volumen
+                    Mejor serie
                   </button>
                 </div>
               )}

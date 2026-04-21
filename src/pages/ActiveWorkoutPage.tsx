@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { playBeep } from '@/utils/audio';
 import type { Exercise, ExerciseSet, RoutineExercise, WorkoutSession } from '@/types';
-import { Check, Plus, SkipForward } from 'lucide-react';
-import { getWorkoutSession, finishWorkoutSession, recordCompletedSet, addSetDuringWorkout } from '@/services/workoutService';
+import { Check, Plus, SkipForward, Trash2 } from 'lucide-react';
+import { getWorkoutSession, finishWorkoutSession, recordCompletedSet, addSetDuringWorkout, deleteSetDuringWorkout } from '@/services/workoutService';
 import { getRoutineExercises, getSetsForRoutineExercises } from '@/services/routineService';
 import { getExercisesMap } from '@/services/exerciseService';
 import { useAuth } from '@/context/AuthContext';
@@ -106,6 +106,27 @@ export default function ActiveWorkoutPage() {
     } catch (err) {
       console.error(err);
       alert('Error al guardar. Verificá tu conexión.');
+    }
+  }
+
+  async function handleDeleteSet(set: ExerciseSet, re: RoutineExercise) {
+    if (!sessionId) return;
+    try {
+      await deleteSetDuringWorkout(set.id!, sessionId, re.id!, allSets);
+      setAllSets(prev => prev.filter(s => s.id !== set.id));
+      setCompletedKeys(prev => {
+        const next = new Set(prev);
+        next.delete(set.id!);
+        return next;
+      });
+      setSetEdits(prev => {
+        const next = { ...prev };
+        delete next[set.id!];
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Error al eliminar. Verificá tu conexión.');
     }
   }
 
@@ -242,6 +263,14 @@ export default function ActiveWorkoutPage() {
                       >
                         {done ? <Check size={16} /> : 'Listo'}
                       </button>
+                      {!done && (
+                        <button
+                          onClick={() => handleDeleteSet(set, re)}
+                          className="w-7 shrink-0 flex items-center justify-center text-slate-600 active:text-red-400"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
                     </div>
                   );
                 })}
