@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { playBeep } from '@/utils/audio';
 import type { Exercise, ExerciseSet, RoutineExercise, WorkoutSession } from '@/types';
 import { Check, Plus, SkipForward, Trash2 } from 'lucide-react';
-import { getWorkoutSession, finishWorkoutSession, recordCompletedSet, addSetDuringWorkout, deleteSetDuringWorkout } from '@/services/workoutService';
+import { getWorkoutSession, finishWorkoutSession, recordCompletedSet, addSetDuringWorkout, deleteSetDuringWorkout, sessionTimestamp } from '@/services/workoutService';
+import { getSessionRecords } from '@/services/historyService';
 import { getRoutineExercises, getSetsForRoutineExercises } from '@/services/routineService';
 import { getExercisesMap } from '@/services/exerciseService';
 import { useAuth } from '@/context/AuthContext';
@@ -38,12 +39,21 @@ export default function ActiveWorkoutPage() {
     setRoutineExercises(res);
 
     if (res.length > 0) {
-      const [sets, exMap] = await Promise.all([
+      const [sets, exMap, records] = await Promise.all([
         getSetsForRoutineExercises(res.map(re => re.id!)),
         getExercisesMap(res.map(re => re.exerciseId)),
+        getSessionRecords(sessionId),
       ]);
       setAllSets(sets);
       setExercises(exMap);
+      // Al retomar una sesión, restaurar los sets ya completados
+      const exerciseByRe = new Map(res.map(re => [re.id!, re.exerciseId]));
+      const doneKeys = new Set(records.map(r => `${r.exerciseId}-${r.setNumber}`));
+      setCompletedKeys(new Set(
+        sets
+          .filter(s => doneKeys.has(`${exerciseByRe.get(s.routineExerciseId)}-${s.setNumber}`))
+          .map(s => s.id!)
+      ));
     }
     setLoading(false);
   }, [sessionId]);
@@ -135,7 +145,7 @@ export default function ActiveWorkoutPage() {
     const reps = getVal(set, 'reps');
     const weight = getVal(set, 'weight');
     try {
-      await recordCompletedSet(sessionId, set, exercise, reps, weight, user.id);
+      await recordCompletedSet(sessionId, set, exercise, reps, weight, user.id, sessionTimestamp(session!));
       setCompletedKeys(prev => new Set([...prev, set.id!]));
       if (re.restSeconds > 0) startCountdown(re.restSeconds);
     } catch (err) {
@@ -148,7 +158,7 @@ export default function ActiveWorkoutPage() {
     if (!sessionId) return;
     if (timerRef.current) clearInterval(timerRef.current);
     try {
-      await finishWorkoutSession(sessionId);
+      await finishWorkoutSession(sessionId, session ? sessionTimestamp(session) : undefined);
       navigate('/history');
     } catch (err) {
       console.error(err);

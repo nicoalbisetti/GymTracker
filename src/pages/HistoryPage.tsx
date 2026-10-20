@@ -1,22 +1,40 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getAllSessions } from '@/services/historyService';
-import MonthCalendar from '@/components/MonthCalendar';
-import { useAuth } from '@/context/AuthContext';
-import type { WorkoutSession } from '@/types';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getAllSessions } from "@/services/historyService";
+import MonthCalendar from "@/components/MonthCalendar";
+import { useAuth } from "@/context/AuthContext";
+import type { WorkoutSession } from "@/types";
 
 const MONTH_NAMES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
-const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const DAY_NAMES = [
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+  "Sábado",
+  "Domingo",
+];
 
 function formatDuration(startedAt: string, finishedAt?: string): string | null {
   if (!finishedAt) return null;
   const mins = Math.round(
-    (new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 60000
+    (new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 60000,
   );
   if (mins < 60) return `${mins} min`;
   return `${Math.floor(mins / 60)}h ${mins % 60}min`;
@@ -32,7 +50,11 @@ export default function HistoryPage() {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
 
-  const today = { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
+  const today = {
+    year: now.getFullYear(),
+    month: now.getMonth(),
+    day: now.getDate(),
+  };
   const isCurrentMonth = viewYear === today.year && viewMonth === today.month;
 
   useEffect(() => {
@@ -64,33 +86,40 @@ export default function HistoryPage() {
 
   function goToPrevMonth() {
     setSelectedDay(null);
-    if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); }
-    else setViewMonth((m) => m - 1);
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else setViewMonth((m) => m - 1);
   }
 
   function goToNextMonth() {
     if (isCurrentMonth) return;
     setSelectedDay(null);
-    if (viewMonth === 11) { setViewYear((y) => y + 1); setViewMonth(0); }
-    else setViewMonth((m) => m + 1);
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else setViewMonth((m) => m + 1);
   }
 
   function handleSelectDay(day: number) {
     setSelectedDay((prev) => (prev === day ? null : day));
   }
 
-  const selectedDayLabel = selectedDay !== null
-    ? (() => {
-        const d = new Date(viewYear, viewMonth, selectedDay);
-        const rawDay = d.getDay();
-        const dayName = DAY_NAMES[rawDay === 0 ? 6 : rawDay - 1];
-        return `${dayName} ${selectedDay}`;
-      })()
-    : null;
+  const selectedDayLabel =
+    selectedDay !== null
+      ? (() => {
+          const d = new Date(viewYear, viewMonth, selectedDay);
+          const rawDay = d.getDay();
+          const dayName = DAY_NAMES[rawDay === 0 ? 6 : rawDay - 1];
+          return `${dayName} ${selectedDay}`;
+        })()
+      : null;
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <h1 className="text-2xl font-bold text-white tracking-tight pt-2">Historial</h1>
+      <h1 className="text-2xl font-bold text-white tracking-tight pt-2">
+        Historial
+      </h1>
 
       {/* Navegación de mes */}
       <div className="flex items-center justify-between">
@@ -107,8 +136,8 @@ export default function HistoryPage() {
           onClick={goToNextMonth}
           className={`p-2 rounded-xl transition-colors ${
             isCurrentMonth
-              ? 'text-slate-700 cursor-default'
-              : 'text-slate-400 active:bg-slate-800'
+              ? "text-slate-700 cursor-default"
+              : "text-slate-400 active:bg-slate-800"
           }`}
           disabled={isCurrentMonth}
         >
@@ -138,31 +167,46 @@ export default function HistoryPage() {
             </p>
           ) : (
             sessionsOnSelectedDay.map((session) => (
-              <button
+              <div
                 key={session.id}
-                onClick={() => navigate(`/history/${session.id}`)}
-                className="w-full bg-slate-800 border border-slate-700/50 rounded-2xl p-4 text-left active:bg-slate-700/50"
+                className="w-full bg-slate-800 border border-slate-700/50 rounded-2xl flex items-center"
               >
-                <p className="font-semibold text-white">{session.routineName}</p>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs text-slate-400">
-                    {new Date(session.startedAt).toLocaleTimeString('es-AR', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
-                  {formatDuration(session.startedAt, session.finishedAt) && (
-                    <span className="text-xs text-slate-500">
-                      · {formatDuration(session.startedAt, session.finishedAt)}
+                <button
+                  onClick={() => navigate(`/history/${session.id}`)}
+                  className="flex-1 p-4 text-left active:bg-slate-700/50 rounded-2xl"
+                >
+                  <p className="font-semibold text-white">
+                    {session.routineName}
+                  </p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-xs text-slate-400">
+                      {new Date(session.startedAt).toLocaleTimeString("es-AR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
-                  )}
-                  {!session.finishedAt && (
-                    <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 rounded-full">
-                      Incompleta
-                    </span>
-                  )}
-                </div>
-              </button>
+                    {formatDuration(session.startedAt, session.finishedAt) && (
+                      <span className="text-xs text-slate-500">
+                        ·{" "}
+                        {formatDuration(session.startedAt, session.finishedAt)}
+                      </span>
+                    )}
+                    {!session.finishedAt && (
+                      <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 rounded-full">
+                        Incompleta
+                      </span>
+                    )}
+                  </div>
+                </button>
+                {!session.finishedAt && (
+                  <button
+                    onClick={() => navigate(`/workout/${session.id}`)}
+                    className="mr-4 bg-primary-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full active:bg-primary-600"
+                  >
+                    Retomar
+                  </button>
+                )}
+              </div>
             ))
           )}
         </div>

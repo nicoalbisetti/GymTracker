@@ -31,10 +31,18 @@ export async function createWorkoutSession(
   return data.id;
 }
 
-export async function finishWorkoutSession(sessionId: string): Promise<void> {
+// Timestamp para registrar actividad de una sesión: si se retoma otro día,
+// se graba en el momento de inicio para que quede en el día en que empezó.
+export function sessionTimestamp(session: WorkoutSession): string {
+  const started = new Date(session.startedAt);
+  const now = new Date();
+  return started.toDateString() === now.toDateString() ? now.toISOString() : session.startedAt;
+}
+
+export async function finishWorkoutSession(sessionId: string, finishedAt?: string): Promise<void> {
   const { error } = await supabase
     .from('workout_sessions')
-    .update({ finished_at: new Date().toISOString() })
+    .update({ finished_at: finishedAt ?? new Date().toISOString() })
     .eq('id', sessionId);
   if (error) throw error;
 }
@@ -45,7 +53,8 @@ export async function recordCompletedSet(
   exercise: Exercise,
   reps: number,
   weight: number,
-  userId: string
+  userId: string,
+  completedAt: string = new Date().toISOString()
 ): Promise<void> {
   const { error: e1 } = await supabase
     .from('sets')
@@ -64,7 +73,7 @@ export async function recordCompletedSet(
       set_number: set.setNumber,
       reps,
       weight,
-      completed_at: new Date().toISOString(),
+      completed_at: completedAt,
     });
   if (e2) throw e2;
 }
